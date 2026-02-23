@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useRef, useState } from 'react'
 import type { Carton } from '@prisma/client'
+import type { ExtendedCarton } from '@/app/components/types'
 import { CartonTable } from '@/app/components/CartonTable'
 import { EditCartonModal } from '@/app/components/EditCartonModal'
 import { AddCartonModal } from '@/app/components/AddCartonModal'
@@ -11,9 +12,9 @@ import { toCm, formToCm, fitsWithRotation } from '@/app/lib/helpers'
 
 
 export default function Page() {
-  const [cartons, setCartons] = useState<Carton[]>([])
+  const [cartons, setCartons] = useState<ExtendedCarton[]>([])
   const [form, setForm] = useState<CartonForm>(EMPTY_FORM)
-  const [editingCarton, setEditingCarton] = useState<Carton | null>(null)
+  const [editingCarton, setEditingCarton] = useState<ExtendedCarton | null>(null)
   const [editForm, setEditForm] = useState<CartonForm>(EMPTY_FORM)
   const [unit, setUnit] = useState<Unit>('in')
   const [searchForm, setSearchForm] = useState<DimValues>({ length: 0, width: 0, height: 0 })
@@ -68,6 +69,7 @@ export default function Page() {
   }
 
   async function add(e: React.FormEvent<HTMLFormElement>) {
+    // body may include extended fields
     e.preventDefault()
     const res = await fetch('/api/cartons', {
       method: 'POST',
@@ -85,7 +87,7 @@ export default function Page() {
     setCartons(prev => prev.filter(c => c.id !== id))
   }
 
-  function startEdit(carton: Carton) {
+  function startEdit(carton: ExtendedCarton) {
     setEditingCarton(carton)
     const convert = unit === 'in' ? (v: number) => Number((v / 2.54).toFixed(2)) : (v: number) => v
     setEditForm({

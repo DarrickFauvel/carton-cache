@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
+import type { ExtendedCarton } from '@/app/components/types'
 
 export async function GET() {
   const cartons = await prisma.carton.findMany({ orderBy: { createdAt: 'desc' } })
@@ -7,10 +8,10 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { length, width, height, brand, modelId, location, material, condition, quantity, notes } = await req.json()
+  const body = await req.json() as any
   try {
     const created = await prisma.carton.create({
-      data: { length, width, height, brand, modelId, location, material, condition, quantity, notes }
+      data: body
     })
     return Response.json(created, { status: 201 })
   } catch (err) {

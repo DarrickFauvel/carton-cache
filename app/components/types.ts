@@ -1,5 +1,11 @@
 import type { Carton } from '@prisma/client'
 
+export type ExtendedCarton = Carton & {
+  brand?: string | null
+  modelId?: string | null
+  location?: string | null
+}
+
 export type Unit = 'in' | 'cm'
 
 export interface DimValues { length: number; width: number; height: number }
