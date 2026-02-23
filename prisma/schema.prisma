@@ -12,6 +12,9 @@ model Carton {
   length    Float
   width     Float
   height    Float
+  brand     String?  // optional brand name
+  modelId   String?  // optional short model identifier
+  location  String?  // optional storage location
   material  String
   condition String
   quantity  Int      @default(1)

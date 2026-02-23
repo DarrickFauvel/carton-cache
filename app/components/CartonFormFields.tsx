@@ -11,6 +11,20 @@ export function CartonFormFields({ form, onChange, unit }: CartonFormFieldsProps
   return (
     <div className="space-y-3">
       <DimFields values={form} onChange={v => onChange({ ...form, ...v })} unit={unit} />
+      <div className="grid grid-cols-3 gap-3">
+        <label className="form-control">
+          <div className="label pb-1"><span className="label-text">Brand</span></div>
+          <input className="input input-bordered input-sm" value={form.brand} onChange={e => onChange({ ...form, brand: e.target.value })} />
+        </label>
+        <label className="form-control">
+          <div className="label pb-1"><span className="label-text">Model ID</span></div>
+          <input className="input input-bordered input-sm" value={form.modelId} onChange={e => onChange({ ...form, modelId: e.target.value })} />
+        </label>
+        <label className="form-control">
+          <div className="label pb-1"><span className="label-text">Location</span></div>
+          <input className="input input-bordered input-sm" value={form.location} onChange={e => onChange({ ...form, location: e.target.value })} />
+        </label>
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <label className="form-control">
           <div className="label pb-1"><span className="label-text">Material</span></div>

@@ -7,9 +7,11 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { length, width, height, material, condition, quantity, notes } = await req.json()
+  const { length, width, height, brand, modelId, location, material, condition, quantity, notes } = await req.json()
   try {
-    const created = await prisma.carton.create({ data: { length, width, height, material, condition, quantity, notes } })
+    const created = await prisma.carton.create({
+      data: { length, width, height, brand, modelId, location, material, condition, quantity, notes }
+    })
     return Response.json(created, { status: 201 })
   } catch (err) {
     console.error(err)
