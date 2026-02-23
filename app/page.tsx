@@ -7,29 +7,8 @@ import { AddCartonModal } from '@/app/components/AddCartonModal'
 import { FindCartonModal } from '@/app/components/FindCartonModal'
 import { Navbar } from '@/app/components/Navbar'
 import { EMPTY_FORM, type CartonForm, type DimValues, type Unit } from '@/app/components/types'
+import { toCm, formToCm, fitsWithRotation } from '@/app/lib/helpers'
 
-function toCm(value: number, unit: Unit) {
-  return unit === 'in' ? Number((value * 2.54).toFixed(2)) : value
-}
-
-function formToCm(form: CartonForm, unit: Unit): CartonForm {
-  if (unit !== 'in') return form
-  return {
-    ...form,
-    length: toCm(form.length, unit),
-    width: toCm(form.width, unit),
-    height: toCm(form.height, unit),
-  }
-}
-
-function fitsWithRotation(cartonDims: number[], required: number[]) {
-  const perms = [[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]]
-  return perms.some(p =>
-    required[p[0]] <= cartonDims[0] &&
-    required[p[1]] <= cartonDims[1] &&
-    required[p[2]] <= cartonDims[2]
-  )
-}
 
 export default function Page() {
   const [cartons, setCartons] = useState<Carton[]>([])
@@ -111,6 +90,7 @@ export default function Page() {
     const convert = unit === 'in' ? (v: number) => Number((v / 2.54).toFixed(2)) : (v: number) => v
     setEditForm({
       length: convert(carton.length), width: convert(carton.width), height: convert(carton.height),
+      brand: carton.brand ?? '', modelId: carton.modelId ?? '', location: carton.location ?? '',
       material: carton.material, condition: carton.condition, quantity: carton.quantity, notes: carton.notes ?? '',
     })
     editModalRef.current?.showModal()

@@ -1,4 +1,5 @@
-import { DimValues, Unit, numStep } from './types'
+import { DimValues, Unit } from './types'
+import { numStep } from '@/app/lib/helpers'
 
 interface DimFieldsProps {
   values: DimValues

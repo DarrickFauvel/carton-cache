@@ -1,6 +1,7 @@
 import type { Carton } from '@prisma/client'
 import { DimFields } from './DimFields'
-import { Unit, DimValues, conditionBadgeClass, formatDims } from './types'
+import { Unit, DimValues } from './types'
+import { conditionBadgeClass, formatDims } from '@/app/lib/helpers'
 
 interface FindCartonsProps {
   searchForm: DimValues
