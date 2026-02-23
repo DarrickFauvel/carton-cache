@@ -1,0 +1,20 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Carton {
+  id        Int      @id @default(autoincrement())
+  length    Float
+  width     Float
+  height    Float
+  material  String
+  condition String
+  quantity  Int      @default(1)
+  notes     String?
+  createdAt DateTime @default(now())
+}

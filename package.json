@@ -1,0 +1,22 @@
+{
+  "name": "carton-cache",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "prisma:generate": "prisma generate",
+    "prisma:push": "prisma db push"
+  },
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "@prisma/client": "4.15.0"
+  },
+  "devDependencies": {
+    "prisma": "4.15.0"
+  }
+}
