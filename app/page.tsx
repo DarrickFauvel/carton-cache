@@ -76,6 +76,7 @@ export default function Page() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formToCm(form, unit)),
     })
+    if (!res.ok) return
     const created: Carton = await res.json()
     setCartons(prev => [created, ...prev])
     setForm(EMPTY_FORM)
