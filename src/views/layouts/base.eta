@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563eb" />
+  <script>(function(){var t=localStorage.getItem('cc-theme');if(t==='dark'||t==='light')document.documentElement.dataset.theme=t;}());</script>
+  <meta name="color-scheme" content="light" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Carton Cache" />
+  <title><%= it.title %> — Carton Cache</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icons/icon.svg" />
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@sudodevnull/datastar@latest/dist/datastar.min.js"></script>
+  <% if (it.componentScripts) { it.componentScripts.forEach(function(s) { %>
+  <script type="module" src="/js/components/<%= s %>.js"></script>
+  <% }) } %>
+  <script type="module" src="/js/components/theme-selector.js"></script>
+  <script type="module" src="/js/components/avatar-menu.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
+  </script>
+</head>
+<body>
+  <% if (it.user) { %>
+  <header class="site-header">
+    <a href="/" class="brand">Carton Cache</a>
+    <nav class="site-nav">
+      <a href="/">Dashboard</a>
+      <a href="/transactions/receive">Receive</a>
+      <a href="/transactions/consume">Consume</a>
+      <a href="/transactions/transfer">Transfer</a>
+      <a href="/transactions">History</a>
+      <a href="/cartons">Cartons</a>
+      <a href="/reports">Reports</a>
+      <% if (it.user.role === 'admin' || it.user.role === 'manager') { %>
+      <a href="/alerts">Alerts</a>
+      <a href="/locations">Locations</a>
+      <% } %>
+      <% if (it.user.role === 'admin') { %>
+      <a href="/users">Users</a>
+      <% } %>
+    </nav>
+    <avatar-menu>
+      <details>
+        <summary class="avatar" data-color="<%= it.user.avatarColor %>"><%= it.user.initials %></summary>
+        <div class="avatar-dropdown">
+          <header class="avatar-dropdown__header">
+            <span class="avatar-dropdown__name"><%= it.user.name %></span>
+            <span class="avatar-dropdown__role"><%= it.user.role %></span>
+          </header>
+          <nav class="avatar-dropdown__nav">
+            <a href="/profile">Profile settings</a>
+          </nav>
+          <div class="avatar-dropdown__theme">
+            <span>Theme</span>
+            <theme-selector>
+              <select class="btn btn-ghost theme-select" aria-label="Theme">
+                <option value="system">System</option>
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+              </select>
+            </theme-selector>
+          </div>
+          <div class="avatar-dropdown__signout">
+            <form method="post" action="/logout">
+              <button type="submit" class="btn btn--danger">Sign out</button>
+            </form>
+          </div>
+        </div>
+      </details>
+    </avatar-menu>
+  </header>
+  <% } %>
+
+  <main class="site-main">
+    <%~ it.body %>
+  </main>
+
+  <footer class="site-footer">
+    <small>Carton Cache</small>
+  </footer>
+</body>
+</html>

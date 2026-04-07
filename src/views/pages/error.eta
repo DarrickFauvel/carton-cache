@@ -1,0 +1,7 @@
+<% layout('/layouts/base') %>
+
+<div class="error-page">
+  <h1><%= it.title %></h1>
+  <p><%= it.message %></p>
+  <a href="/" class="btn">Back to dashboard</a>
+</div>

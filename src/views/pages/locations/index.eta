@@ -1,0 +1,44 @@
+<% layout('/layouts/base') %>
+
+<div class="page-header">
+  <h1>Locations</h1>
+  <% if (it.user && it.user.role === 'admin') { %>
+  <div class="action-row">
+    <a href="/locations/new" class="btn btn--primary">+ New location</a>
+  </div>
+  <% } %>
+</div>
+
+<% if (it.locations.length === 0) { %>
+<div class="empty-state">
+  <p>No locations yet.</p>
+  <a href="/locations/new" class="btn btn--primary">Add your first location</a>
+</div>
+<% } else { %>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Address</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% it.locations.forEach(function(loc) { %>
+      <tr>
+        <td><a href="/locations/<%= loc.id %>"><strong><%= loc.name %></strong></a></td>
+        <td><%= loc.address || '—' %></td>
+        <td><%= loc.active ? 'Active' : 'Inactive' %></td>
+        <td>
+          <% if (it.user && it.user.role === 'admin') { %>
+          <a href="/locations/<%= loc.id %>/edit" class="btn btn-ghost">Edit</a>
+          <% } %>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>

@@ -1,0 +1,88 @@
+<% layout('/layouts/base') %>
+
+<%
+const typeLabel = {
+  receive: 'Received', consume: 'Consumed',
+  transfer_out: 'Transfer out', transfer_in: 'Transfer in', adjustment: 'Adjustment'
+};
+%>
+
+<div class="page-header">
+  <h1>History</h1>
+  <div class="action-row">
+    <a href="/reports/snapshot.csv" class="btn">Export CSV</a>
+  </div>
+</div>
+
+<section class="form-card">
+  <form method="get" action="/transactions" class="stack">
+    <div class="form-group">
+      <label for="f-location">Location</label>
+      <select id="f-location" name="location">
+        <option value="">All locations</option>
+        <% it.locations.forEach(function(loc) { %>
+        <option value="<%= loc.id %>"<%= it.filters.location === loc.id ? ' selected' : '' %>><%= loc.name %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="f-type">Type</label>
+      <select id="f-type" name="type">
+        <option value="">All types</option>
+        <option value="receive"<%= it.filters.type === 'receive' ? ' selected' : '' %>>Received</option>
+        <option value="consume"<%= it.filters.type === 'consume' ? ' selected' : '' %>>Consumed</option>
+        <option value="transfer_out"<%= it.filters.type === 'transfer_out' ? ' selected' : '' %>>Transfer out</option>
+        <option value="transfer_in"<%= it.filters.type === 'transfer_in' ? ' selected' : '' %>>Transfer in</option>
+        <option value="adjustment"<%= it.filters.type === 'adjustment' ? ' selected' : '' %>>Adjustment</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="f-carton">Carton type</label>
+      <select id="f-carton" name="carton">
+        <option value="">All cartons</option>
+        <% it.cartons.forEach(function(c) { %>
+        <option value="<%= c.id %>"<%= it.filters.carton === c.id ? ' selected' : '' %>><%= c.name %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="action-row">
+      <button type="submit" class="btn btn--primary">Filter</button>
+      <a href="/transactions" class="btn">Clear</a>
+    </div>
+  </form>
+</section>
+
+<% if (it.transactions.length === 0) { %>
+<div class="empty-state">
+  <p>No transactions match your filters.</p>
+</div>
+<% } else { %>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Type</th>
+        <th>Carton</th>
+        <th>Condition</th>
+        <th>Qty</th>
+        <th>Location</th>
+        <th>By</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% it.transactions.forEach(function(t) { %>
+      <tr>
+        <td><time datetime="<%= new Date(t.created_at).toISOString() %>"><%= new Date(t.created_at).toLocaleDateString() %></time></td>
+        <td><%= typeLabel[t.type] || t.type %></td>
+        <td><%= t.carton_name %></td>
+        <td><span class="condition--<%= t.condition %>"><%= t.condition %></span></td>
+        <td><%= t.quantity %></td>
+        <td><%= t.location_name %></td>
+        <td><%= t.user_name %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>

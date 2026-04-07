@@ -1,0 +1,61 @@
+<% layout('/layouts/base') %>
+
+<div class="page-header">
+  <h1>Dashboard</h1>
+  <div class="action-row">
+    <a href="/transactions/receive" class="btn btn--primary">+ Receive</a>
+    <a href="/transactions/consume" class="btn">Consume</a>
+    <a href="/transactions/transfer" class="btn">Transfer</a>
+  </div>
+</div>
+
+<%
+  /* Build a threshold lookup: "locationId:cartonTypeId:condition" -> min_quantity */
+  const thresholdMap = {};
+  it.thresholds.forEach(function(t) {
+    thresholdMap[t.location_id + ':' + t.carton_type_id + ':' + t.condition] = t.min_quantity;
+    thresholdMap[t.location_id + ':' + t.carton_type_id + ':any'] = t.min_quantity;
+  });
+
+  function isLow(lot) {
+    const specific = thresholdMap[lot.location_id + ':' + lot.carton_type_id + ':' + lot.condition];
+    const any      = thresholdMap[lot.location_id + ':' + lot.carton_type_id + ':any'];
+    const min = specific ?? any;
+    return min != null && lot.quantity <= min;
+  }
+
+  /* Group lots by location */
+  const byLocation = {};
+  it.lots.forEach(function(lot) {
+    if (!byLocation[lot.location_id]) byLocation[lot.location_id] = { name: lot.location_name, lots: [] };
+    byLocation[lot.location_id].lots.push(lot);
+  });
+%>
+
+<% if (Object.keys(byLocation).length === 0) { %>
+<div class="empty-state">
+  <p>No stock recorded yet.</p>
+  <a href="/transactions/receive" class="btn btn--primary">Receive your first cartons</a>
+</div>
+<% } %>
+
+<% Object.values(byLocation).forEach(function(loc) { %>
+<section class="location-block">
+  <h2 class="location-title"><%= loc.name %></h2>
+  <div class="lot-grid">
+    <% loc.lots.forEach(function(lot) { %>
+    <article class="lot-card<%= isLow(lot) ? ' lot-card--low' : '' %>">
+      <header class="lot-card__header">
+        <span class="lot-card__name"><%= lot.carton_name %></span>
+        <% if (lot.sku) { %><span class="lot-card__sku"><%= lot.sku %></span><% } %>
+      </header>
+      <div class="lot-card__condition condition--<%= lot.condition %>"><%= lot.condition %></div>
+      <div class="lot-card__qty"><%= lot.quantity %></div>
+      <% if (isLow(lot)) { %>
+      <div class="lot-card__alert" role="alert">Low stock</div>
+      <% } %>
+    </article>
+    <% }) %>
+  </div>
+</section>
+<% }) %>

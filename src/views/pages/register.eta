@@ -1,0 +1,34 @@
+<% layout('/layouts/base') %>
+
+<section class="auth-card">
+  <h1>Set up Carton Cache</h1>
+  <p class="auth-sub">Create your admin account to get started.</p>
+
+  <% if (it.error) { %>
+  <p class="alert alert--error" role="alert"><%= it.error %></p>
+  <% } %>
+
+  <form method="post" action="/register" class="stack">
+    <div class="form-group">
+      <label for="name">Full name</label>
+      <input id="name" type="text" name="name" autocomplete="name" required autofocus />
+    </div>
+
+    <div class="form-group">
+      <label for="email">Email</label>
+      <input id="email" type="email" name="email" autocomplete="email" inputmode="email" required />
+    </div>
+
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input id="password" type="password" name="password" autocomplete="new-password" required minlength="8" />
+    </div>
+
+    <div class="form-group">
+      <label for="confirm">Confirm password</label>
+      <input id="confirm" type="password" name="confirm" autocomplete="new-password" required minlength="8" />
+    </div>
+
+    <button type="submit" class="btn btn--primary">Create account</button>
+  </form>
+</section>

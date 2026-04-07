@@ -1,0 +1,59 @@
+<% layout('/layouts/base') %>
+
+<div class="page-header">
+  <h1><%= it.title %></h1>
+  <div class="action-row">
+    <a href="/cartons" class="btn">Cancel</a>
+  </div>
+</div>
+
+<section class="form-card">
+  <form method="post" action="<%= it.carton ? '/cartons/' + it.carton.id : '/cartons' %>" class="stack">
+
+    <div class="form-group">
+      <label for="name">Name</label>
+      <input id="name" type="text" name="name" value="<%= it.carton ? it.carton.name : '' %>" required autofocus />
+    </div>
+
+    <div class="form-group">
+      <label for="sku">SKU <small>(optional)</small></label>
+      <input id="sku" type="text" name="sku" value="<%= it.carton ? (it.carton.sku || '') : '' %>" />
+    </div>
+
+    <div class="form-group">
+      <label for="barcode">Barcode <small>(optional)</small></label>
+      <input id="barcode" type="text" name="barcode" value="<%= it.carton ? (it.carton.barcode || '') : '' %>" inputmode="numeric" />
+    </div>
+
+    <div class="form-group">
+      <label for="length_cm">Length (cm) <small>(optional)</small></label>
+      <input id="length_cm" type="number" name="length_cm" inputmode="decimal" min="0" step="0.1"
+             value="<%= it.carton ? (it.carton.length_cm || '') : '' %>" />
+    </div>
+
+    <div class="form-group">
+      <label for="width_cm">Width (cm) <small>(optional)</small></label>
+      <input id="width_cm" type="number" name="width_cm" inputmode="decimal" min="0" step="0.1"
+             value="<%= it.carton ? (it.carton.width_cm || '') : '' %>" />
+    </div>
+
+    <div class="form-group">
+      <label for="height_cm">Height (cm) <small>(optional)</small></label>
+      <input id="height_cm" type="number" name="height_cm" inputmode="decimal" min="0" step="0.1"
+             value="<%= it.carton ? (it.carton.height_cm || '') : '' %>" />
+    </div>
+
+    <div class="form-group">
+      <label for="unit_cost">Unit cost <small>(optional)</small></label>
+      <input id="unit_cost" type="number" name="unit_cost" inputmode="decimal" min="0" step="0.01"
+             value="<%= it.carton ? (it.carton.unit_cost || '') : '' %>" />
+    </div>
+
+    <div class="form-group">
+      <label for="notes">Notes <small>(optional)</small></label>
+      <textarea id="notes" name="notes" rows="2"><%= it.carton ? (it.carton.notes || '') : '' %></textarea>
+    </div>
+
+    <button type="submit" class="btn btn--primary"><%= it.carton ? 'Save changes' : 'Create carton type' %></button>
+  </form>
+</section>

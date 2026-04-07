@@ -1,0 +1,90 @@
+<% layout('/layouts/base') %>
+
+<div class="page-header">
+  <h1>Alert Thresholds</h1>
+</div>
+
+<section class="form-card">
+  <h2>Add threshold</h2>
+  <form method="post" action="/alerts" class="stack">
+
+    <div class="form-group">
+      <label for="location_id">Location</label>
+      <select id="location_id" name="location_id" required>
+        <option value="">Select location…</option>
+        <% it.locations.forEach(function(loc) { %>
+        <option value="<%= loc.id %>"><%= loc.name %></option>
+        <% }) %>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="carton_type_id">Carton type</label>
+      <select id="carton_type_id" name="carton_type_id" required>
+        <option value="">Select carton…</option>
+        <% it.cartons.forEach(function(c) { %>
+        <option value="<%= c.id %>"><%= c.name %></option>
+        <% }) %>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="condition">Condition</label>
+      <select id="condition" name="condition">
+        <option value="any">Any condition</option>
+        <option value="new">New</option>
+        <option value="good">Good</option>
+        <option value="fair">Fair</option>
+        <option value="poor">Poor</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="min_quantity">Alert when quantity at or below</label>
+      <input id="min_quantity" type="number" name="min_quantity" inputmode="numeric" min="0" value="5" required />
+    </div>
+
+    <button type="submit" class="btn btn--primary">Save threshold</button>
+  </form>
+</section>
+
+<% if (it.thresholds.length > 0) { %>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Location</th>
+        <th>Carton</th>
+        <th>Condition</th>
+        <th>Min qty</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% it.thresholds.forEach(function(t) { %>
+      <tr>
+        <td><%= t.location_name %></td>
+        <td><%= t.carton_name %></td>
+        <td>
+          <% if (t.condition === 'any') { %>
+          Any
+          <% } else { %>
+          <span class="condition--<%= t.condition %>"><%= t.condition %></span>
+          <% } %>
+        </td>
+        <td><%= t.min_quantity %></td>
+        <td>
+          <form method="post" action="/alerts/<%= t.id %>/delete">
+            <button type="submit" class="btn btn--danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } else { %>
+<div class="empty-state">
+  <p>No thresholds configured.</p>
+</div>
+<% } %>

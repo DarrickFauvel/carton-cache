@@ -1,0 +1,52 @@
+<% layout('/layouts/base') %>
+
+<div class="page-header">
+  <h1>Carton Types</h1>
+  <% if (it.user && (it.user.role === 'admin' || it.user.role === 'manager')) { %>
+  <div class="action-row">
+    <a href="/cartons/new" class="btn btn--primary">+ New carton type</a>
+  </div>
+  <% } %>
+</div>
+
+<% if (it.cartons.length === 0) { %>
+<div class="empty-state">
+  <p>No carton types yet.</p>
+  <a href="/cartons/new" class="btn btn--primary">Add your first carton type</a>
+</div>
+<% } else { %>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>SKU</th>
+        <th>Dimensions (cm)</th>
+        <th>Unit cost</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% it.cartons.forEach(function(c) { %>
+      <tr>
+        <td><strong><%= c.name %></strong></td>
+        <td><code><%= c.sku || '—' %></code></td>
+        <td>
+          <% if (c.length_cm && c.width_cm && c.height_cm) { %>
+          <%= c.length_cm %> × <%= c.width_cm %> × <%= c.height_cm %>
+          <% } else { %>
+          —
+          <% } %>
+        </td>
+        <td><%= c.unit_cost != null ? '$' + Number(c.unit_cost).toFixed(2) : '—' %></td>
+        <td>
+          <% if (it.user && (it.user.role === 'admin' || it.user.role === 'manager')) { %>
+          <a href="/cartons/<%= c.id %>/edit" class="btn btn-ghost">Edit</a>
+          <% } %>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>

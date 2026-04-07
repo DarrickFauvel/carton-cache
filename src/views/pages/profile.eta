@@ -1,0 +1,79 @@
+<% layout('/layouts/base') %>
+
+<%
+const colors = [
+  { key: 'color-1', label: 'Blue' },
+  { key: 'color-2', label: 'Green' },
+  { key: 'color-3', label: 'Amber' },
+  { key: 'color-4', label: 'Red' },
+  { key: 'color-5', label: 'Purple' },
+  { key: 'color-6', label: 'Cyan' },
+  { key: 'color-7', label: 'Pink' },
+  { key: 'color-8', label: 'Teal' },
+];
+%>
+
+<div class="page-header">
+  <h1>Profile</h1>
+</div>
+
+<% if (it.saved) { %>
+<p class="alert alert--warning" role="status">Changes saved.</p>
+<% } %>
+<% if (it.error) { %>
+<p class="alert alert--error" role="alert"><%= it.error %></p>
+<% } %>
+
+<section class="form-card">
+  <form method="post" action="/profile" class="stack profile-form">
+
+    <div class="profile-preview">
+      <div class="avatar avatar--preview" data-color="<%= it.record.avatar_color %>">
+        <%= it.user.initials %>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="name">Display name</label>
+      <input id="name" type="text" name="name" value="<%= it.record.name %>" required />
+    </div>
+
+    <div class="form-group">
+      <label>Email</label>
+      <output class="profile-email"><%= it.record.email %></output>
+    </div>
+
+    <fieldset class="form-group color-picker">
+      <legend>Avatar color</legend>
+      <div class="color-options">
+        <% colors.forEach(function(c) { %>
+        <label class="color-option">
+          <input class="color-option__radio" type="radio" name="avatar_color"
+                 value="<%= c.key %>"<%= it.record.avatar_color === c.key ? ' checked' : '' %> />
+          <span class="color-option__swatch" data-color="<%= c.key %>" aria-label="<%= c.label %>"></span>
+        </label>
+        <% }) %>
+      </div>
+    </fieldset>
+
+    <details class="form-group">
+      <summary class="btn btn-ghost">Change password</summary>
+      <div class="stack password-fields">
+        <div class="form-group">
+          <label for="current_password">Current password</label>
+          <input id="current_password" type="password" name="current_password" autocomplete="current-password" />
+        </div>
+        <div class="form-group">
+          <label for="new_password">New password</label>
+          <input id="new_password" type="password" name="new_password" autocomplete="new-password" minlength="8" />
+        </div>
+        <div class="form-group">
+          <label for="confirm_password">Confirm new password</label>
+          <input id="confirm_password" type="password" name="confirm_password" autocomplete="new-password" minlength="8" />
+        </div>
+      </div>
+    </details>
+
+    <button type="submit" class="btn btn--primary">Save changes</button>
+  </form>
+</section>

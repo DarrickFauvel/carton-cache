@@ -1,0 +1,107 @@
+<% layout('/layouts/base') %>
+
+<%
+const totalStockValue = it.stockValue.reduce(function(sum, r) { return sum + (r.value || 0); }, 0);
+const totalSavings    = it.reuseSavings.reduce(function(sum, r) { return sum + (r.savings || 0); }, 0);
+const totalSpend      = it.spend.reduce(function(sum, r) { return sum + (r.total_cost || 0); }, 0);
+%>
+
+<div class="page-header">
+  <h1>Reports</h1>
+  <div class="action-row">
+    <a href="/reports/snapshot.csv" class="btn">Export CSV</a>
+  </div>
+</div>
+
+<section class="lot-grid">
+  <article class="lot-card">
+    <div class="lot-card__name">Stock value</div>
+    <div class="lot-card__qty">$<%= totalStockValue.toFixed(2) %></div>
+    <div class="lot-card__sku">New cartons on hand</div>
+  </article>
+  <article class="lot-card">
+    <div class="lot-card__name">Reuse savings</div>
+    <div class="lot-card__qty">$<%= totalSavings.toFixed(2) %></div>
+    <div class="lot-card__sku">vs. buying new</div>
+  </article>
+  <article class="lot-card">
+    <div class="lot-card__name">New carton spend</div>
+    <div class="lot-card__qty">$<%= totalSpend.toFixed(2) %></div>
+    <div class="lot-card__sku">Selected period</div>
+  </article>
+</section>
+
+<% if (it.stockValue.length > 0) { %>
+<section class="location-block">
+  <h2 class="location-title">Stock value by carton</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Carton</th><th>Condition</th><th>Qty</th><th>Unit cost</th><th>Value</th></tr>
+      </thead>
+      <tbody>
+        <% it.stockValue.forEach(function(r) { %>
+        <tr>
+          <td><%= r.name %></td>
+          <td><span class="condition--<%= r.condition %>"><%= r.condition %></span></td>
+          <td><%= r.quantity %></td>
+          <td>$<%= Number(r.unit_cost).toFixed(2) %></td>
+          <td>$<%= Number(r.value).toFixed(2) %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+<% } %>
+
+<% if (it.reuseSavings.length > 0) { %>
+<section class="location-block">
+  <h2 class="location-title">Reuse savings</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Carton</th><th>Condition</th><th>Qty received</th><th>Savings</th></tr>
+      </thead>
+      <tbody>
+        <% it.reuseSavings.forEach(function(r) { %>
+        <tr>
+          <td><%= r.name %></td>
+          <td><span class="condition--<%= r.condition %>"><%= r.condition %></span></td>
+          <td><%= r.qty %></td>
+          <td>$<%= Number(r.savings).toFixed(2) %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+<% } %>
+
+<% if (it.spend.length > 0) { %>
+<section class="location-block">
+  <h2 class="location-title">New carton spend</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Carton</th><th>Qty</th><th>Total cost</th></tr>
+      </thead>
+      <tbody>
+        <% it.spend.forEach(function(r) { %>
+        <tr>
+          <td><%= r.name %></td>
+          <td><%= r.qty %></td>
+          <td>$<%= Number(r.total_cost).toFixed(2) %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+<% } %>
+
+<% if (it.consumption.length === 0 && it.stockValue.length === 0) { %>
+<div class="empty-state">
+  <p>No data yet. Start logging transactions to see reports.</p>
+</div>
+<% } %>

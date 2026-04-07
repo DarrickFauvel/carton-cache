@@ -1,0 +1,30 @@
+<% layout('/layouts/base') %>
+
+<section class="auth-card">
+  <h1>Carton Cache</h1>
+  <p class="auth-sub">Sign in to your account</p>
+
+  <% if (it.firstRun) { %>
+  <p class="alert alert--warning">No accounts yet. <a href="/register">Create your admin account</a> to get started.</p>
+  <% } %>
+
+  <% if (it.error) { %>
+  <p class="alert alert--error" role="alert"><%= it.error %></p>
+  <% } %>
+
+  <form method="post" action="/login" class="stack">
+    <div class="form-group">
+      <label for="email">Email</label>
+      <input id="email" type="email" name="email" autocomplete="email"
+             inputmode="email" required autofocus />
+    </div>
+
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input id="password" type="password" name="password"
+             autocomplete="current-password" required />
+    </div>
+
+    <button type="submit" class="btn btn--primary">Sign in</button>
+  </form>
+</section>

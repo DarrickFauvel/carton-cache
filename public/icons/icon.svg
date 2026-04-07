@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="40" fill="#2563eb"/>
+  <!-- Box body -->
+  <rect x="36" y="90" width="120" height="72" rx="6" fill="white"/>
+  <!-- Lid left flap -->
+  <path d="M36 90 L76 58 L116 90 Z" fill="white" opacity="0.85"/>
+  <!-- Lid right flap -->
+  <path d="M116 90 L136 64 L156 90 Z" fill="white" opacity="0.7"/>
+  <!-- Lid center line -->
+  <line x1="116" y1="58" x2="116" y2="90" stroke="#2563eb" stroke-width="4"/>
+</svg>

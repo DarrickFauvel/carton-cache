@@ -1,0 +1,29 @@
+<% layout('/layouts/base') %>
+
+<div class="page-header">
+  <h1>Users</h1>
+  <div class="action-row">
+    <a href="/users/new" class="btn btn--primary">+ Add user</a>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Role</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% it.users.forEach(function(u) { %>
+      <tr>
+        <td><%= u.name %></td>
+        <td><%= u.email %></td>
+        <td><span class="condition--<%= u.role === 'admin' ? 'new' : u.role === 'manager' ? 'good' : u.role === 'staff' ? 'fair' : 'poor' %>"><%= u.role %></span></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>

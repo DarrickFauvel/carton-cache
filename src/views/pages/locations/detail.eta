@@ -1,0 +1,43 @@
+<% layout('/layouts/base') %>
+
+<div class="page-header">
+  <h1><%= it.location.name %></h1>
+  <div class="action-row">
+    <a href="/transactions/receive" class="btn btn--primary">+ Receive</a>
+    <% if (it.user && it.user.role === 'admin') { %>
+    <a href="/locations/<%= it.location.id %>/edit" class="btn">Edit</a>
+    <% } %>
+  </div>
+</div>
+
+<% if (it.lots.length === 0) { %>
+<div class="empty-state">
+  <p>No stock at this location.</p>
+  <a href="/transactions/receive" class="btn btn--primary">Receive cartons</a>
+</div>
+<% } else { %>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Carton</th>
+        <th>Condition</th>
+        <th>Qty</th>
+        <th>Unit cost</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% it.lots.forEach(function(lot) { %>
+      <tr>
+        <td><strong><%= lot.carton_name %></strong></td>
+        <td><span class="condition--<%= lot.condition %>"><%= lot.condition %></span></td>
+        <td><strong><%= lot.quantity %></strong></td>
+        <td><%= lot.unit_cost != null ? '$' + Number(lot.unit_cost).toFixed(2) : '—' %></td>
+        <td><%= lot.unit_cost != null ? '$' + (lot.quantity * lot.unit_cost).toFixed(2) : '—' %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>
