@@ -9,6 +9,10 @@
   <% } %>
 </div>
 
+<% if (it.saved) { %>
+<p class="alert alert--warning" role="status">Saved.</p>
+<% } %>
+
 <% if (it.locations.length === 0) { %>
 <div class="empty-state">
   <p>No locations yet.</p>

@@ -9,6 +9,13 @@
   <% } %>
 </div>
 
+<% if (it.saved) { %>
+<p class="alert alert--warning" role="status">Saved.</p>
+<% } %>
+<% if (it.deleteError) { %>
+<p class="alert alert--error" role="alert"><%= it.deleteError %></p>
+<% } %>
+
 <% if (it.cartons.length === 0) { %>
 <div class="empty-state">
   <p>No carton types yet.</p>
@@ -21,6 +28,7 @@
       <tr>
         <th>Name</th>
         <th>SKU</th>
+        <th>Barcode</th>
         <th>Dimensions (cm)</th>
         <th>Unit cost</th>
         <th></th>
@@ -29,19 +37,26 @@
     <tbody>
       <% it.cartons.forEach(function(c) { %>
       <tr>
-        <td><strong><%= c.name %></strong></td>
-        <td><code><%= c.sku || '—' %></code></td>
+        <td><strong><%= c.name %></strong><% if (c.notes) { %><br><small><%= c.notes %></small><% } %></td>
+        <td><% if (c.sku) { %><code><%= c.sku %></code><% } else { %>—<% } %></td>
+        <td><% if (c.barcode) { %><code><%= c.barcode %></code><% } else { %>—<% } %></td>
         <td>
           <% if (c.length_cm && c.width_cm && c.height_cm) { %>
           <%= c.length_cm %> × <%= c.width_cm %> × <%= c.height_cm %>
-          <% } else { %>
-          —
-          <% } %>
+          <% } else { %>—<% } %>
         </td>
         <td><%= c.unit_cost != null ? '$' + Number(c.unit_cost).toFixed(2) : '—' %></td>
         <td>
           <% if (it.user && (it.user.role === 'admin' || it.user.role === 'manager')) { %>
-          <a href="/cartons/<%= c.id %>/edit" class="btn btn-ghost">Edit</a>
+          <div class="action-row">
+            <a href="/cartons/<%= c.id %>/edit" class="btn btn-ghost">Edit</a>
+            <form method="post" action="/cartons/<%= c.id %>/delete">
+              <button type="submit" class="btn btn--danger"
+                      onclick="return confirm('Delete <%= c.name %>? This cannot be undone.')">
+                Delete
+              </button>
+            </form>
+          </div>
           <% } %>
         </td>
       </tr>

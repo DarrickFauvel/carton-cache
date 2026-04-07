@@ -36,15 +36,7 @@
       <a href="/transactions/consume">Consume</a>
       <a href="/transactions/transfer">Transfer</a>
       <a href="/transactions">History</a>
-      <a href="/cartons">Cartons</a>
       <a href="/reports">Reports</a>
-      <% if (it.user.role === 'admin' || it.user.role === 'manager') { %>
-      <a href="/alerts">Alerts</a>
-      <a href="/locations">Locations</a>
-      <% } %>
-      <% if (it.user.role === 'admin') { %>
-      <a href="/users">Users</a>
-      <% } %>
     </nav>
     <avatar-menu>
       <details>
@@ -56,6 +48,14 @@
           </header>
           <nav class="avatar-dropdown__nav">
             <a href="/profile">Profile settings</a>
+            <a href="/cartons">Carton types</a>
+            <% if (it.user.role === 'admin' || it.user.role === 'manager') { %>
+            <a href="/alerts">Alerts</a>
+            <a href="/locations">Locations</a>
+            <% } %>
+            <% if (it.user.role === 'admin') { %>
+            <a href="/users">Users</a>
+            <% } %>
           </nav>
           <div class="avatar-dropdown__theme">
             <span>Theme</span>

@@ -7,17 +7,23 @@
   </div>
 </div>
 
+<% if (it.error) { %>
+<p class="alert alert--error" role="alert"><%= it.error %></p>
+<% } %>
+
 <section class="form-card">
-  <form method="post" action="<%= it.location ? '/locations/' + it.location.id : '/locations' %>" class="stack">
+  <form method="post" action="<%= it.location ? '/locations/' + it.location.id + '/edit' : '/locations' %>" class="stack">
 
     <div class="form-group">
       <label for="name">Name</label>
-      <input id="name" type="text" name="name" value="<%= it.location ? it.location.name : '' %>" required autofocus />
+      <input id="name" type="text" name="name"
+             value="<%= it.location ? it.location.name : '' %>" required autofocus />
     </div>
 
     <div class="form-group">
       <label for="address">Address <small>(optional)</small></label>
-      <input id="address" type="text" name="address" value="<%= it.location ? (it.location.address || '') : '' %>" />
+      <input id="address" type="text" name="address"
+             value="<%= it.location ? (it.location.address || '') : '' %>" />
     </div>
 
     <% if (it.location) { %>
@@ -30,6 +36,8 @@
     </div>
     <% } %>
 
-    <button type="submit" class="btn btn--primary"><%= it.location ? 'Save changes' : 'Create location' %></button>
+    <button type="submit" class="btn btn--primary">
+      <%= it.location ? 'Save changes' : 'Create location' %>
+    </button>
   </form>
 </section>
