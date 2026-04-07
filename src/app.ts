@@ -1,5 +1,6 @@
 import express from "express";
 import session from "express-session";
+import { TursoSessionStore } from "./lib/session-store.js";
 import cookieParser from "cookie-parser";
 import { Eta } from "eta";
 import { fileURLToPath } from "url";
@@ -42,6 +43,7 @@ export function createApp() {
   app.use(cookieParser());
   app.use(
     session({
+      store: new TursoSessionStore(),
       secret: process.env.SESSION_SECRET ?? "dev-secret-change-me",
       resave: false,
       saveUninitialized: false,
