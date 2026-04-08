@@ -222,15 +222,17 @@ body:not(.has-app-nav) .site-header {
   }
 }
 
-/* ── Public nav (sign in / sign up) ──────────────────────────────────────── */
+/* ── Public nav (sign in) ────────────────────────────────────────────────── */
 .site-nav--public {
-  grid-area: logout;   /* sits in the tools slot on the right */
+  grid-area: logout;
   flex-wrap: nowrap;
   overflow-x: visible;
   flex: 0;
   padding: 0;
   gap: var(--space-2);
   align-items: center;
+  margin-left: auto;
+  justify-content: flex-end;
 }
 
 /* ── Header tools (QR + avatar) ───────────────────────────────────────────── */
