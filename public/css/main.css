@@ -113,10 +113,15 @@ h1, h2, h3 { line-height: 1.2; }
 
 /* ── Nav height token — keeps main content clear of the fixed bar ─────────── */
 :root {
-  --nav-h: 6.5rem;   /* mobile: two rows (brand+tools, nav) */
+  --nav-h: 6.5rem;   /* mobile: two rows (brand+tools, nav) for authenticated */
 }
 @media (min-width: 640px) {
-  :root { --nav-h: 3.75rem; }  /* desktop: single row */
+  :root { --nav-h: 3.75rem; }
+}
+
+/* Public pages (welcome, login, register) — header is always single row */
+body.has-nav:not(.has-app-nav) {
+  --nav-h: 3.75rem;
 }
 
 body.has-nav {
@@ -124,6 +129,12 @@ body.has-nav {
 }
 
 /* ── Header — mobile-first grid ───────────────────────────────────────────── */
+/* Public (unauthenticated) header is always single-row */
+body:not(.has-app-nav) .site-header {
+  grid-template-areas: "brand logout";
+  grid-template-columns: 1fr auto;
+}
+
 .site-header {
   display: grid;
   grid-template-areas: "brand logout" "nav nav";
@@ -209,6 +220,17 @@ body.has-nav {
     overflow-x: visible;
     flex: 1;
   }
+}
+
+/* ── Public nav (sign in / sign up) ──────────────────────────────────────── */
+.site-nav--public {
+  grid-area: logout;   /* sits in the tools slot on the right */
+  flex-wrap: nowrap;
+  overflow-x: visible;
+  flex: 0;
+  padding: 0;
+  gap: var(--space-2);
+  align-items: center;
 }
 
 /* ── Header tools (QR + avatar) ───────────────────────────────────────────── */

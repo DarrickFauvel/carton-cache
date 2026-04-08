@@ -29,10 +29,11 @@
     }
   </script>
 </head>
-<body<% if (it.user) { %> class="has-nav"<% } %>>
-  <% if (it.user) { %>
+<body class="has-nav<% if (it.user) { %> has-app-nav<% } %>">
   <header class="site-header">
     <a href="/" class="brand">Carton Cache</a>
+
+    <% if (it.user) { %>
     <nav class="site-nav">
       <a href="/" <%~ it.path === '/' ? 'aria-current="page"' : '' %>>Dashboard</a>
       <a href="/transactions/receive" <%~ it.path === '/transactions/receive' ? 'aria-current="page"' : '' %>>Receive</a>
@@ -42,53 +43,58 @@
       <a href="/reports" <%~ it.path?.startsWith('/reports') ? 'aria-current="page"' : '' %>>Reports</a>
     </nav>
     <div class="header-tools">
-    <qr-modal>
-      <button type="button" class="btn btn-ghost btn--icon" title="QR code for this page" aria-label="QR code for this page">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
-          <path d="M3 3h7v7H3V3zm1.5 1.5v4h4v-4h-4zm.5.5h3v3H5V5zM14 3h7v7h-7V3zm1.5 1.5v4h4v-4h-4zm.5.5h3v3h-3V5zM3 14h7v7H3v-7zm1.5 1.5v4h4v-4h-4zm.5.5h3v3H5v-3zM14 14h2v2h-2v-2zm3 0h2v2h-2v-2zm3 0h1v1h-1v-1zm-6 3h2v2h-2v-2zm3 0h2v1h-2v-1zm-3 2h2v2h-2v-2zm3 1h2v1h-2v-1zm2-1h1v3h-1v-3zm-5-5h1v1h-1v-1z"/>
-        </svg>
-      </button>
-    </qr-modal>
-    <avatar-menu>
-      <details>
-        <summary class="avatar" data-color="<%= it.user.avatarColor %>"><%= it.user.initials %></summary>
-        <div class="avatar-dropdown">
-          <header class="avatar-dropdown__header">
-            <span class="avatar-dropdown__name"><%= it.user.name %></span>
-            <span class="avatar-dropdown__role"><%= it.user.role %></span>
-          </header>
-          <nav class="avatar-dropdown__nav">
-            <a href="/profile">Profile settings</a>
-            <a href="/cartons">Carton types</a>
-            <% if (it.user.role === 'admin' || it.user.role === 'manager') { %>
-            <a href="/alerts">Alerts</a>
-            <a href="/locations">Locations</a>
-            <% } %>
-            <% if (it.user.role === 'admin') { %>
-            <a href="/users">Users</a>
-            <% } %>
-          </nav>
-          <div class="avatar-dropdown__theme">
-            <span>Theme</span>
-            <theme-selector>
-              <select class="btn btn-ghost theme-select" aria-label="Theme">
-                <option value="system">System</option>
-                <option value="light">Light</option>
-                <option value="dark">Dark</option>
-              </select>
-            </theme-selector>
+      <qr-modal>
+        <button type="button" class="btn btn-ghost btn--icon" title="QR code for this page" aria-label="QR code for this page">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+            <path d="M3 3h7v7H3V3zm1.5 1.5v4h4v-4h-4zm.5.5h3v3H5V5zM14 3h7v7h-7V3zm1.5 1.5v4h4v-4h-4zm.5.5h3v3h-3V5zM3 14h7v7H3v-7zm1.5 1.5v4h4v-4h-4zm.5.5h3v3H5v-3zM14 14h2v2h-2v-2zm3 0h2v2h-2v-2zm3 0h1v1h-1v-1zm-6 3h2v2h-2v-2zm3 0h2v1h-2v-1zm-3 2h2v2h-2v-2zm3 1h2v1h-2v-1zm2-1h1v3h-1v-3zm-5-5h1v1h-1v-1z"/>
+          </svg>
+        </button>
+      </qr-modal>
+      <avatar-menu>
+        <details>
+          <summary class="avatar" data-color="<%= it.user.avatarColor %>"><%= it.user.initials %></summary>
+          <div class="avatar-dropdown">
+            <header class="avatar-dropdown__header">
+              <span class="avatar-dropdown__name"><%= it.user.name %></span>
+              <span class="avatar-dropdown__role"><%= it.user.role %></span>
+            </header>
+            <nav class="avatar-dropdown__nav">
+              <a href="/profile">Profile settings</a>
+              <a href="/cartons">Carton types</a>
+              <% if (it.user.role === 'admin' || it.user.role === 'manager') { %>
+              <a href="/alerts">Alerts</a>
+              <a href="/locations">Locations</a>
+              <% } %>
+              <% if (it.user.role === 'admin') { %>
+              <a href="/users">Users</a>
+              <% } %>
+            </nav>
+            <div class="avatar-dropdown__theme">
+              <span>Theme</span>
+              <theme-selector>
+                <select class="btn btn-ghost theme-select" aria-label="Theme">
+                  <option value="system">System</option>
+                  <option value="light">Light</option>
+                  <option value="dark">Dark</option>
+                </select>
+              </theme-selector>
+            </div>
+            <div class="avatar-dropdown__signout">
+              <form method="post" action="/logout">
+                <button type="submit" class="btn btn--danger">Sign out</button>
+              </form>
+            </div>
           </div>
-          <div class="avatar-dropdown__signout">
-            <form method="post" action="/logout">
-              <button type="submit" class="btn btn--danger">Sign out</button>
-            </form>
-          </div>
-        </div>
-      </details>
-    </avatar-menu>
+        </details>
+      </avatar-menu>
     </div>
+    <% } else { %>
+    <nav class="site-nav site-nav--public">
+      <a href="/login" <%~ it.path === '/login' ? 'aria-current="page"' : '' %>>Sign in</a>
+      <a href="/register" class="btn btn--primary">Sign up free</a>
+    </nav>
+    <% } %>
   </header>
-  <% } %>
 
   <main class="site-main">
     <%~ it.body %>
