@@ -1,0 +1,52 @@
+<% layout('/layouts/base') %>
+
+<div class="welcome">
+  <div class="welcome__hero">
+    <div class="welcome__brand">
+      <svg class="welcome__icon" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+        <rect x="4" y="16" width="40" height="28" rx="3" fill="var(--color-primary)" opacity="0.15"/>
+        <rect x="4" y="16" width="40" height="28" rx="3" stroke="var(--color-primary)" stroke-width="2.5"/>
+        <path d="M4 24h40" stroke="var(--color-primary)" stroke-width="2"/>
+        <path d="M17 16V10a7 7 0 0 1 14 0v6" stroke="var(--color-primary)" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M17 28h14" stroke="var(--color-primary)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <h1 class="welcome__title">Carton Cache</h1>
+    </div>
+
+    <p class="welcome__tagline">Inventory management for reusable shipping cartons</p>
+
+    <div class="welcome__actions">
+      <a href="/login" class="btn btn--primary welcome__cta">Sign in</a>
+      <% if (it.firstRun) { %>
+      <a href="/register" class="btn welcome__cta">Get started</a>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="welcome__features">
+    <div class="welcome__feature">
+      <svg class="welcome__feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/>
+      </svg>
+      <h3>Track by location</h3>
+      <p>Monitor stock levels across multiple warehouses and storage sites in real time.</p>
+    </div>
+    <div class="welcome__feature">
+      <svg class="welcome__feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="2" y="7" width="20" height="14" rx="2"/>
+        <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+        <line x1="12" y1="12" x2="12" y2="16"/>
+        <line x1="10" y1="14" x2="14" y2="14"/>
+      </svg>
+      <h3>Receive &amp; consume</h3>
+      <p>Log incoming and outgoing cartons quickly — with barcode scanning support.</p>
+    </div>
+    <div class="welcome__feature">
+      <svg class="welcome__feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M18 20V10M12 20V4M6 20v-6"/>
+      </svg>
+      <h3>Low-stock alerts</h3>
+      <p>Set minimum thresholds per location and get notified before you run short.</p>
+    </div>
+  </div>
+</div>

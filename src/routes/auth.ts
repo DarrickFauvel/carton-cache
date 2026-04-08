@@ -11,6 +11,12 @@ async function userCount(): Promise<number> {
   return Number(r.rows[0]?.n ?? 0);
 }
 
+router.get("/", async (req, res, next) => {
+  if (req.session.userId) return next();
+  const firstRun = (await userCount()) === 0;
+  res.render("pages/welcome", { title: "Carton Cache", firstRun });
+});
+
 router.get("/login", async (req, res) => {
   if (req.session.userId) {
     res.redirect("/");
