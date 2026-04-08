@@ -48,6 +48,8 @@ export function locals(req: Request, res: Response, next: NextFunction) {
         locationIds: req.session.userLocationIds,
         avatarColor: req.session.userAvatarColor ?? "color-1",
         initials: toInitials(req.session.userName ?? "?"),
+        orgId: req.session.orgId,
+        orgPlan: req.session.orgPlan ?? "free",
       }
     : null;
   next();

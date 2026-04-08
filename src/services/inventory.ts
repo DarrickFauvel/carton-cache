@@ -10,6 +10,7 @@ import { ulid, now } from "../lib/id.js";
 import type { Condition, TransactionType } from "../types.js";
 
 interface ReceiveArgs {
+  orgId: string;
   locationId: string;
   cartonTypeId: string;
   condition: Condition;
@@ -20,6 +21,7 @@ interface ReceiveArgs {
 }
 
 interface ConsumeArgs {
+  orgId: string;
   locationId: string;
   cartonTypeId: string;
   condition: Condition;
@@ -29,6 +31,7 @@ interface ConsumeArgs {
 }
 
 interface TransferArgs {
+  orgId: string;
   fromLocationId: string;
   toLocationId: string;
   cartonTypeId: string;
@@ -39,6 +42,7 @@ interface TransferArgs {
 }
 
 interface AdjustArgs {
+  orgId: string;
   locationId: string;
   cartonTypeId: string;
   condition: Condition;
@@ -73,6 +77,7 @@ async function upsertLot(
 
 /** Insert a transaction record. Returns the new transaction id. */
 async function insertTx(
+  orgId: string,
   type: TransactionType,
   cartonTypeId: string,
   condition: Condition,
@@ -91,8 +96,8 @@ async function insertTx(
     sql: `
       INSERT INTO transactions
         (id, type, carton_type_id, condition, quantity, unit_cost_snapshot,
-         location_id, linked_transaction_id, user_id, notes, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         location_id, linked_transaction_id, user_id, notes, org_id, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     args: [
       id,
@@ -105,6 +110,7 @@ async function insertTx(
       opts.linkedTransactionId ?? null,
       userId,
       opts.notes ?? null,
+      orgId,
       ts,
     ],
   });
@@ -118,13 +124,14 @@ export async function receive(args: ReceiveArgs): Promise<string> {
   let unitCost = args.unitCostOverride ?? null;
   if (unitCost === null && args.condition === "new") {
     const result = await db.execute({
-      sql: "SELECT unit_cost FROM carton_types WHERE id = ?",
-      args: [args.cartonTypeId],
+      sql: "SELECT unit_cost FROM carton_types WHERE id = ? AND org_id = ?",
+      args: [args.cartonTypeId, args.orgId],
     });
     unitCost = (result.rows[0]?.unit_cost as number) ?? null;
   }
 
   const txId = await insertTx(
+    args.orgId,
     "receive",
     args.cartonTypeId,
     args.condition,
@@ -134,17 +141,16 @@ export async function receive(args: ReceiveArgs): Promise<string> {
     { unitCostSnapshot: unitCost ?? undefined, notes: args.notes }
   );
 
-  // Upsert the lot
   await db.execute({
     sql: `
-      INSERT INTO inventory_lots (id, location_id, carton_type_id, condition, quantity, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO inventory_lots (id, location_id, carton_type_id, condition, quantity, updated_at, org_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT (location_id, carton_type_id, condition)
       DO UPDATE SET quantity = quantity + ?, updated_at = ?
     `,
     args: [
       ulid(), args.locationId, args.cartonTypeId, args.condition,
-      args.quantity, ts,
+      args.quantity, ts, args.orgId,
       args.quantity, ts,
     ],
   });
@@ -156,6 +162,7 @@ export async function consume(args: ConsumeArgs): Promise<string> {
   const ts = now();
 
   const txId = await insertTx(
+    args.orgId,
     "consume",
     args.cartonTypeId,
     args.condition,
@@ -181,6 +188,7 @@ export async function transfer(args: TransferArgs): Promise<[string, string]> {
   const ts = now();
 
   const outId = await insertTx(
+    args.orgId,
     "transfer_out",
     args.cartonTypeId,
     args.condition,
@@ -191,6 +199,7 @@ export async function transfer(args: TransferArgs): Promise<[string, string]> {
   );
 
   const inId = await insertTx(
+    args.orgId,
     "transfer_in",
     args.cartonTypeId,
     args.condition,
@@ -237,16 +246,16 @@ export async function transfer(args: TransferArgs): Promise<[string, string]> {
 export async function adjust(args: AdjustArgs): Promise<string> {
   const ts = now();
 
-  // Get current quantity to determine delta direction (for the record)
   const current = await db.execute({
-    sql: "SELECT quantity FROM inventory_lots WHERE location_id = ? AND carton_type_id = ? AND condition = ?",
-    args: [args.locationId, args.cartonTypeId, args.condition],
+    sql: "SELECT quantity FROM inventory_lots WHERE location_id = ? AND carton_type_id = ? AND condition = ? AND org_id = ?",
+    args: [args.locationId, args.cartonTypeId, args.condition, args.orgId],
   });
   const currentQty = (current.rows[0]?.quantity as number) ?? 0;
   const delta = args.newQuantity - currentQty;
-  const quantity = Math.abs(delta) || 1; // transactions require quantity > 0
+  const quantity = Math.abs(delta) || 1;
 
   const txId = await insertTx(
+    args.orgId,
     "adjustment",
     args.cartonTypeId,
     args.condition,
@@ -258,14 +267,14 @@ export async function adjust(args: AdjustArgs): Promise<string> {
 
   await db.execute({
     sql: `
-      INSERT INTO inventory_lots (id, location_id, carton_type_id, condition, quantity, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO inventory_lots (id, location_id, carton_type_id, condition, quantity, updated_at, org_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT (location_id, carton_type_id, condition)
       DO UPDATE SET quantity = ?, updated_at = ?
     `,
     args: [
       ulid(), args.locationId, args.cartonTypeId, args.condition,
-      args.newQuantity, ts,
+      args.newQuantity, ts, args.orgId,
       args.newQuantity, ts,
     ],
   });

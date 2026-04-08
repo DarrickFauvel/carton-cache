@@ -1,8 +1,8 @@
 <% layout('/layouts/base') %>
 
 <section class="auth-card">
-  <h1>Set up Carton Cache</h1>
-  <p class="auth-sub">Create your admin account to get started.</p>
+  <h1>Create your account</h1>
+  <p class="auth-sub">Free to start. No credit card required.</p>
 
   <% if (it.error) { %>
   <p class="alert alert--error" role="alert"><%= it.error %></p>
@@ -31,4 +31,5 @@
 
     <button type="submit" class="btn btn--primary">Create account</button>
   </form>
+  <p class="auth-sub auth-switch">Already have an account? <a href="/login">Sign in</a></p>
 </section>

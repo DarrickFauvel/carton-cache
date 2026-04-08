@@ -761,7 +761,8 @@ carton-scanner { display: contents; }
   }
 }
 
-.auth-sub { color: var(--color-text-muted); margin-top: 0; }
+.auth-sub    { color: var(--color-text-muted); margin-top: 0; }
+.auth-switch { margin-top: var(--space-4); text-align: center; font-size: 0.9rem; }
 
 /* ── Alerts ───────────────────────────────────────────────────────────────── */
 .alert {

@@ -17,6 +17,7 @@ export interface User {
   role: Role;
   location_ids: string[]; // stored as JSON in DB
   avatar_color: string;
+  org_id: string;
   created_at: number;
 }
 
@@ -81,6 +82,15 @@ export interface PushSubscription {
   created_at: number;
 }
 
+export type Plan = "free" | "pro";
+
+export interface Organization {
+  id: string;
+  name: string;
+  plan: Plan;
+  created_at: number;
+}
+
 // ── Session augmentation ──────────────────────────────────────────────────────
 
 declare module "express-session" {
@@ -90,5 +100,7 @@ declare module "express-session" {
     userName: string;
     userLocationIds: string[];
     userAvatarColor: string;
+    orgId: string;
+    orgPlan: Plan;
   }
 }

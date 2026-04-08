@@ -3,23 +3,24 @@ import { requireAuth, requireRole } from "../middleware/auth.js";
 import { db } from "../db/client.js";
 import * as inventory from "../services/inventory.js";
 import type { Condition } from "../types.js";
+import { str } from "../lib/id.js";
 
 const router = Router();
 
 // ── Receive ───────────────────────────────────────────────────────────────────
 
 router.get("/receive", requireAuth, async (req, res) => {
+  const { orgId, userRole } = req.session;
   const [locations, cartons] = await Promise.all([
-    db.execute("SELECT id, name FROM locations WHERE active = 1 ORDER BY name"),
-    db.execute("SELECT id, name, sku, barcode, unit_cost FROM carton_types ORDER BY name"),
+    db.execute({ sql: "SELECT id, name FROM locations WHERE active = 1 AND org_id = ? ORDER BY name", args: [orgId!] }),
+    db.execute({ sql: "SELECT id, name, sku, barcode, unit_cost FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId!] }),
   ]);
-  const role = req.session.userRole;
   res.render("pages/transactions/receive", {
     title: "Receive Stock",
     locations: locations.rows,
     cartons: cartons.rows,
-    canCreateLocation: role === "admin",
-    canCreateCarton: role === "admin" || role === "manager",
+    canCreateLocation: userRole === "admin",
+    canCreateCarton: userRole === "admin" || userRole === "manager",
     componentScripts: ["barcode-scanner", "quick-create", "carton-scanner"],
   });
 });
@@ -27,13 +28,14 @@ router.get("/receive", requireAuth, async (req, res) => {
 router.post("/receive", requireAuth, async (req, res) => {
   const { location_id, carton_type_id, condition, quantity, unit_cost, notes } = req.body;
   await inventory.receive({
-    locationId: location_id,
-    cartonTypeId: carton_type_id,
-    condition: condition as Condition,
-    quantity: parseInt(quantity, 10),
-    unitCostOverride: unit_cost ? parseFloat(unit_cost) : undefined,
+    orgId: req.session.orgId!,
+    locationId: str(location_id),
+    cartonTypeId: str(carton_type_id),
+    condition: str(condition) as Condition,
+    quantity: parseInt(str(quantity), 10),
+    unitCostOverride: unit_cost ? parseFloat(str(unit_cost)) : undefined,
     userId: req.session.userId!,
-    notes,
+    notes: str(notes) || undefined,
   });
   res.redirect("/");
 });
@@ -41,9 +43,10 @@ router.post("/receive", requireAuth, async (req, res) => {
 // ── Consume ───────────────────────────────────────────────────────────────────
 
 router.get("/consume", requireAuth, async (req, res) => {
+  const { orgId } = req.session;
   const [locations, cartons] = await Promise.all([
-    db.execute("SELECT id, name FROM locations WHERE active = 1 ORDER BY name"),
-    db.execute("SELECT id, name, sku, barcode FROM carton_types ORDER BY name"),
+    db.execute({ sql: "SELECT id, name FROM locations WHERE active = 1 AND org_id = ? ORDER BY name", args: [orgId!] }),
+    db.execute({ sql: "SELECT id, name, sku, barcode FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId!] }),
   ]);
   res.render("pages/transactions/consume", {
     title: "Consume Stock",
@@ -56,12 +59,13 @@ router.get("/consume", requireAuth, async (req, res) => {
 router.post("/consume", requireAuth, async (req, res) => {
   const { location_id, carton_type_id, condition, quantity, notes } = req.body;
   await inventory.consume({
-    locationId: location_id,
-    cartonTypeId: carton_type_id,
-    condition: condition as Condition,
-    quantity: parseInt(quantity, 10),
+    orgId: req.session.orgId!,
+    locationId: str(location_id),
+    cartonTypeId: str(carton_type_id),
+    condition: str(condition) as Condition,
+    quantity: parseInt(str(quantity), 10),
     userId: req.session.userId!,
-    notes,
+    notes: str(notes) || undefined,
   });
   res.redirect("/");
 });
@@ -69,9 +73,10 @@ router.post("/consume", requireAuth, async (req, res) => {
 // ── Transfer ──────────────────────────────────────────────────────────────────
 
 router.get("/transfer", requireAuth, async (req, res) => {
+  const { orgId } = req.session;
   const [locations, cartons] = await Promise.all([
-    db.execute("SELECT id, name FROM locations WHERE active = 1 ORDER BY name"),
-    db.execute("SELECT id, name, sku, barcode FROM carton_types ORDER BY name"),
+    db.execute({ sql: "SELECT id, name FROM locations WHERE active = 1 AND org_id = ? ORDER BY name", args: [orgId!] }),
+    db.execute({ sql: "SELECT id, name, sku, barcode FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId!] }),
   ]);
   res.render("pages/transactions/transfer", {
     title: "Transfer Stock",
@@ -83,13 +88,14 @@ router.get("/transfer", requireAuth, async (req, res) => {
 router.post("/transfer", requireAuth, async (req, res) => {
   const { from_location_id, to_location_id, carton_type_id, condition, quantity, notes } = req.body;
   await inventory.transfer({
-    fromLocationId: from_location_id,
-    toLocationId: to_location_id,
-    cartonTypeId: carton_type_id,
-    condition: condition as Condition,
-    quantity: parseInt(quantity, 10),
+    orgId: req.session.orgId!,
+    fromLocationId: str(from_location_id),
+    toLocationId: str(to_location_id),
+    cartonTypeId: str(carton_type_id),
+    condition: str(condition) as Condition,
+    quantity: parseInt(str(quantity), 10),
     userId: req.session.userId!,
-    notes,
+    notes: str(notes) || undefined,
   });
   res.redirect("/");
 });
@@ -97,9 +103,10 @@ router.post("/transfer", requireAuth, async (req, res) => {
 // ── Adjustment ────────────────────────────────────────────────────────────────
 
 router.get("/adjust", requireRole("admin", "manager"), async (req, res) => {
+  const { orgId } = req.session;
   const [locations, cartons] = await Promise.all([
-    db.execute("SELECT id, name FROM locations WHERE active = 1 ORDER BY name"),
-    db.execute("SELECT id, name, sku FROM carton_types ORDER BY name"),
+    db.execute({ sql: "SELECT id, name FROM locations WHERE active = 1 AND org_id = ? ORDER BY name", args: [orgId!] }),
+    db.execute({ sql: "SELECT id, name, sku FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId!] }),
   ]);
   res.render("pages/transactions/adjust", {
     title: "Adjust Stock",
@@ -111,12 +118,13 @@ router.get("/adjust", requireRole("admin", "manager"), async (req, res) => {
 router.post("/adjust", requireRole("admin", "manager"), async (req, res) => {
   const { location_id, carton_type_id, condition, new_quantity, notes } = req.body;
   await inventory.adjust({
-    locationId: location_id,
-    cartonTypeId: carton_type_id,
-    condition: condition as Condition,
-    newQuantity: parseInt(new_quantity, 10),
+    orgId: req.session.orgId!,
+    locationId: str(location_id),
+    cartonTypeId: str(carton_type_id),
+    condition: str(condition) as Condition,
+    newQuantity: parseInt(str(new_quantity), 10),
     userId: req.session.userId!,
-    notes,
+    notes: str(notes),
   });
   res.redirect("/");
 });
@@ -124,6 +132,7 @@ router.post("/adjust", requireRole("admin", "manager"), async (req, res) => {
 // ── History ───────────────────────────────────────────────────────────────────
 
 router.get("/", requireAuth, async (req, res) => {
+  const { orgId } = req.session;
   const { location, type, carton, from, to } = req.query;
 
   let sql = `
@@ -132,9 +141,9 @@ router.get("/", requireAuth, async (req, res) => {
     JOIN carton_types ct ON ct.id = t.carton_type_id
     JOIN locations l ON l.id = t.location_id
     JOIN users u ON u.id = t.user_id
-    WHERE 1=1
+    WHERE t.org_id = ?
   `;
-  const args: (string | number)[] = [];
+  const args: (string | number)[] = [orgId!];
 
   if (location) { sql += " AND t.location_id = ?"; args.push(location as string); }
   if (type)     { sql += " AND t.type = ?"; args.push(type as string); }
@@ -146,8 +155,8 @@ router.get("/", requireAuth, async (req, res) => {
 
   const [txResult, locations, cartons] = await Promise.all([
     db.execute({ sql, args }),
-    db.execute("SELECT id, name FROM locations ORDER BY name"),
-    db.execute("SELECT id, name FROM carton_types ORDER BY name"),
+    db.execute({ sql: "SELECT id, name FROM locations WHERE org_id = ? ORDER BY name", args: [orgId!] }),
+    db.execute({ sql: "SELECT id, name FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId!] }),
   ]);
 
   res.render("pages/transactions/history", {

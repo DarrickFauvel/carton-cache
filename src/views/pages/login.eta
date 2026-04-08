@@ -27,4 +27,5 @@
 
     <button type="submit" class="btn btn--primary">Sign in</button>
   </form>
+  <p class="auth-sub auth-switch">Don't have an account? <a href="/register">Sign up free</a></p>
 </section>

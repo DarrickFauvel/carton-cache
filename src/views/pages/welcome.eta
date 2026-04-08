@@ -31,10 +31,8 @@
     </p>
 
     <div class="welcome__actions">
-      <a href="/login" class="btn btn--primary welcome__cta">Sign in</a>
-      <% if (it.firstRun) { %>
-      <a href="/register" class="btn welcome__cta">Get started</a>
-      <% } %>
+      <a href="/register" class="btn btn--primary welcome__cta">Sign up free</a>
+      <a href="/login" class="btn welcome__cta">Sign in</a>
     </div>
   </section>
 

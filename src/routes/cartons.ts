@@ -39,15 +39,15 @@ router.get("/lookup", requireAuth, async (req, res) => {
   const barcode = String(req.query.barcode ?? "").trim();
   if (!barcode) return res.status(400).json({ error: "barcode required" });
   const result = await db.execute({
-    sql: "SELECT id, name, sku FROM carton_types WHERE barcode = ?",
-    args: [barcode],
+    sql: "SELECT id, name, sku FROM carton_types WHERE barcode = ? AND org_id = ?",
+    args: [barcode, req.session.orgId!],
   });
   if (!result.rows[0]) return res.status(404).json({ error: "No carton with that barcode." });
   res.json(result.rows[0]);
 });
 
-router.get("/", requireAuth, async (_req, res) => {
-  const result = await db.execute("SELECT * FROM carton_types ORDER BY name");
+router.get("/", requireAuth, async (req, res) => {
+  const result = await db.execute({ sql: "SELECT * FROM carton_types WHERE org_id = ? ORDER BY name", args: [req.session.orgId!] });
   res.render("pages/cartons/index", {
     title: "Carton Types",
     cartons: result.rows,
@@ -81,11 +81,11 @@ router.post("/", requireRole("admin", "manager"), async (req, res) => {
   const id = ulid();
   try {
     await db.execute({
-      sql: `INSERT INTO carton_types (id, name, sku, barcode, length_cm, width_cm, height_cm, unit_cost, notes, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO carton_types (id, name, sku, barcode, length_cm, width_cm, height_cm, unit_cost, notes, org_id, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [id, fields.name, fields.sku, fields.barcode,
              fields.length_cm, fields.width_cm, fields.height_cm,
-             fields.unit_cost, fields.notes, now()],
+             fields.unit_cost, fields.notes, req.session.orgId!, now()],
     });
   } catch (err) {
     const error = constraintMessage(err) ?? "Could not save carton type. Please try again.";
@@ -104,8 +104,8 @@ router.post("/", requireRole("admin", "manager"), async (req, res) => {
 
 router.get("/:id/edit", requireRole("admin", "manager"), async (req, res) => {
   const result = await db.execute({
-    sql: "SELECT * FROM carton_types WHERE id = ?",
-    args: [str(req.params.id)],
+    sql: "SELECT * FROM carton_types WHERE id = ? AND org_id = ?",
+    args: [str(req.params.id), req.session.orgId!],
   });
   if (!result.rows[0]) return res.redirect("/cartons");
   res.render("pages/cartons/form", {
@@ -118,9 +118,10 @@ router.get("/:id/edit", requireRole("admin", "manager"), async (req, res) => {
 
 router.post("/:id/edit", requireRole("admin", "manager"), async (req, res) => {
   const id = str(req.params.id);
+  const orgId = req.session.orgId!;
   const fields = parseCartonBody(req.body);
   if (!fields.name) {
-    const result = await db.execute({ sql: "SELECT * FROM carton_types WHERE id = ?", args: [id] });
+    const result = await db.execute({ sql: "SELECT * FROM carton_types WHERE id = ? AND org_id = ?", args: [id, orgId] });
     return res.render("pages/cartons/form", {
       title: "Edit Carton Type",
       carton: { ...result.rows[0], ...req.body },
@@ -131,13 +132,13 @@ router.post("/:id/edit", requireRole("admin", "manager"), async (req, res) => {
   try {
     await db.execute({
       sql: `UPDATE carton_types SET name=?, sku=?, barcode=?, length_cm=?, width_cm=?, height_cm=?, unit_cost=?, notes=?
-            WHERE id=?`,
+            WHERE id=? AND org_id=?`,
       args: [fields.name, fields.sku, fields.barcode,
              fields.length_cm, fields.width_cm, fields.height_cm,
-             fields.unit_cost, fields.notes, id],
+             fields.unit_cost, fields.notes, id, orgId],
     });
   } catch (err) {
-    const result = await db.execute({ sql: "SELECT * FROM carton_types WHERE id = ?", args: [id] });
+    const result = await db.execute({ sql: "SELECT * FROM carton_types WHERE id = ? AND org_id = ?", args: [id, orgId] });
     return res.render("pages/cartons/form", {
       title: "Edit Carton Type",
       carton: { ...result.rows[0], ...req.body },
@@ -152,13 +153,14 @@ router.post("/:id/delete", requireRole("admin", "manager"), async (req, res) => 
   const id = str(req.params.id);
 
   // Block deletion if the type has any transaction history or live stock
+  const orgId = req.session.orgId!;
   const [txCount, lotCount] = await Promise.all([
-    db.execute({ sql: "SELECT COUNT(*) AS n FROM transactions WHERE carton_type_id = ?", args: [id] }),
-    db.execute({ sql: "SELECT COUNT(*) AS n FROM inventory_lots WHERE carton_type_id = ? AND quantity > 0", args: [id] }),
+    db.execute({ sql: "SELECT COUNT(*) AS n FROM transactions WHERE carton_type_id = ? AND org_id = ?", args: [id, orgId] }),
+    db.execute({ sql: "SELECT COUNT(*) AS n FROM inventory_lots WHERE carton_type_id = ? AND quantity > 0 AND org_id = ?", args: [id, orgId] }),
   ]);
 
   if (Number(txCount.rows[0]?.n) > 0 || Number(lotCount.rows[0]?.n) > 0) {
-    const result = await db.execute("SELECT * FROM carton_types ORDER BY name");
+    const result = await db.execute({ sql: "SELECT * FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId] });
     return res.render("pages/cartons/index", {
       title: "Carton Types",
       cartons: result.rows,
@@ -167,7 +169,7 @@ router.post("/:id/delete", requireRole("admin", "manager"), async (req, res) => 
     });
   }
 
-  await db.execute({ sql: "DELETE FROM carton_types WHERE id = ?", args: [id] });
+  await db.execute({ sql: "DELETE FROM carton_types WHERE id = ? AND org_id = ?", args: [id, orgId] });
   res.redirect("/cartons?saved=1");
 });
 

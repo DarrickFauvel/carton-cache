@@ -7,8 +7,8 @@ import type { User, Role } from "../types.js";
 
 const router = Router();
 
-router.get("/users", requireRole("admin"), async (_req, res) => {
-  const result = await db.execute("SELECT id, name, email, role, created_at FROM users ORDER BY created_at ASC");
+router.get("/users", requireRole("admin"), async (req, res) => {
+  const result = await db.execute({ sql: "SELECT id, name, email, role, created_at FROM users WHERE org_id = ? ORDER BY created_at ASC", args: [req.session.orgId!] });
   res.render("pages/users", {
     title: "Users",
     users: result.rows as unknown as Pick<User, "id" | "name" | "email" | "role" | "created_at">[],
@@ -45,8 +45,8 @@ router.post("/users", requireRole("admin"), async (req, res) => {
 
   const hash = await argon2.hash(password);
   await db.execute({
-    sql: "INSERT INTO users (id, email, name, password_hash, role, location_ids, created_at) VALUES (?,?,?,?,?,?,?)",
-    args: [ulid(), email.toLowerCase().trim(), name.trim(), hash, role, "[]", now()],
+    sql: "INSERT INTO users (id, email, name, password_hash, role, location_ids, org_id, created_at) VALUES (?,?,?,?,?,?,?,?)",
+    args: [ulid(), email.toLowerCase().trim(), name.trim(), hash, role, "[]", req.session.orgId!, now()],
   });
 
   res.redirect("/users");
