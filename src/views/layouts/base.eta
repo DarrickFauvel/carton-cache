@@ -90,7 +90,7 @@
     </div>
     <% } else { %>
     <nav class="site-nav site-nav--public">
-      <a href="/login" <%~ it.path === '/login' ? 'aria-current="page"' : '' %>>Sign in</a>
+      <a href="/login">Sign in</a>
     </nav>
     <% } %>
   </header>
