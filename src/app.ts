@@ -1,4 +1,4 @@
-import express from "express";
+import express, { type NextFunction, type Request, type Response } from "express";
 import session from "express-session";
 import { TursoSessionStore } from "./lib/session-store.js";
 import cookieParser from "cookie-parser";
@@ -77,6 +77,16 @@ export function createApp() {
     res.status(404).render("pages/error", {
       title: "Not Found",
       message: "Page not found.",
+    });
+  });
+
+  // ── 500 ──────────────────────────────────────────────────────────────────────
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+    console.error(err);
+    res.status(500).render("pages/error", {
+      title: "Server Error",
+      message: process.env.NODE_ENV === "production" ? "Something went wrong." : err.message,
     });
   });
 
