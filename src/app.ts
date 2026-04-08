@@ -36,7 +36,7 @@ export function createApp() {
       .catch(cb);
   });
   app.set("view engine", "eta");
-  app.set("views", join(__dirname, "views"));
+  app.set("views", viewsDir);
 
   // ── Middleware ───────────────────────────────────────────────────────────────
   app.use(express.urlencoded({ extended: true }));
