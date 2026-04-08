@@ -8,6 +8,10 @@
   <p class="alert alert--warning">No accounts yet. <a href="/register">Create your admin account</a> to get started.</p>
   <% } %>
 
+  <% if (it.notice) { %>
+  <p class="alert alert--warning" role="status"><%= it.notice %></p>
+  <% } %>
+
   <% if (it.error) { %>
   <p class="alert alert--error" role="alert"><%= it.error %></p>
   <% } %>
@@ -26,6 +30,10 @@
     </div>
 
     <button type="submit" class="btn btn--primary">Sign in</button>
+
+    <p class="auth-sub" style="text-align:right;margin-top:var(--space-1)">
+      <a href="/forgot-password">Forgot password?</a>
+    </p>
   </form>
   <p class="auth-sub auth-switch">Don't have an account? <a href="/register">Sign up free</a></p>
 </section>
