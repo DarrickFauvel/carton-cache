@@ -268,14 +268,23 @@ summary.avatar::-webkit-details-marker { display: none; }
   justify-content: center;
   cursor: pointer;
   user-select: none;
-  border: 2px solid transparent;
-  transition: border-color 0.15s, opacity 0.15s;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition: outline-color 0.15s, opacity 0.15s;
   flex-shrink: 0;
   -webkit-tap-highlight-color: transparent;
 
   &:hover { opacity: 0.85; }
 
-  details[open] > & { border-color: var(--color-border); }
+  details[open] > & { outline-color: var(--color-primary); }
+}
+
+.avatar--md {
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 0.8rem;
+  cursor: default;
+  pointer-events: none;
 }
 
 /* ── 8 avatar color options ───────────────────────────────────────────────── */
@@ -289,72 +298,121 @@ summary.avatar::-webkit-details-marker { display: none; }
 :is(.avatar, .color-option__swatch)[data-color="color-8"] { --avatar-bg: #059669; }
 
 /* ── Dropdown panel ───────────────────────────────────────────────────────── */
+@keyframes dropdown-enter {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
 .avatar-dropdown {
   position: absolute;
   top: calc(100% + var(--space-2));
   right: 0;
-  min-width: 15rem;
+  min-width: 16rem;
   max-width: calc(100vw - var(--space-6));
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
-  z-index: 100;
+  border-radius: calc(var(--radius) * 1.5);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 16px 40px rgba(0,0,0,0.14);
+  z-index: 200;
   overflow: hidden;
+  animation: dropdown-enter 0.15s ease both;
+}
 
-  &__header {
-    padding: var(--space-3) var(--space-4);
-    border-bottom: 1px solid var(--color-border);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-    background: var(--color-bg);
-  }
+.avatar-dropdown__header {
+  padding: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+}
 
-  &__name { font-weight: 600; font-size: 0.9rem; }
+.avatar-dropdown__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
 
-  &__role {
-    font-size: 0.75rem;
-    color: var(--color-text-muted);
-    text-transform: capitalize;
-  }
+.avatar-dropdown__name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-  &__nav {
-    padding: var(--space-2);
-    border-bottom: 1px solid var(--color-border);
+.avatar-dropdown__role {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  text-transform: capitalize;
+  letter-spacing: 0.04em;
+}
 
-    a {
-      display: flex;
-      align-items: center;
-      min-height: 2.75rem;
-      padding: var(--space-2) var(--space-3);
-      border-radius: var(--radius-sm);
-      text-decoration: none;
-      color: var(--color-text);
-      font-size: 0.9rem;
-      transition: background 0.12s;
+.avatar-dropdown__nav {
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
 
-      &:hover { background: var(--color-bg); }
-    }
-  }
+.avatar-dropdown__nav a {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.5rem;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--color-text);
+  font-size: 0.875rem;
+  transition: background 0.1s, color 0.1s;
+}
 
-  &__theme {
-    padding: var(--space-2) var(--space-3);
-    border-bottom: 1px solid var(--color-border);
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    font-size: 0.85rem;
-    color: var(--color-text-muted);
-  }
+.avatar-dropdown__nav a:hover {
+  background: var(--color-bg);
+  color: var(--color-primary);
+}
 
-  &__signout {
-    padding: var(--space-2);
+.avatar-dropdown__nav svg {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  transition: color 0.1s;
+}
 
-    form { width: 100%; }
+.avatar-dropdown__nav a:hover svg {
+  color: var(--color-primary);
+}
 
-    button { width: 100%; }
-  }
+.avatar-dropdown__theme {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+
+.avatar-dropdown__theme svg { flex-shrink: 0; }
+
+.avatar-dropdown__signout {
+  padding: var(--space-2);
+}
+
+.avatar-dropdown__signout form { width: 100%; }
+
+.avatar-dropdown__signout-btn {
+  width: 100%;
+  background: transparent;
+  color: var(--color-danger);
+  font-size: 0.875rem;
+  justify-content: center;
+  border: 1px solid transparent;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.avatar-dropdown__signout-btn:hover {
+  background: var(--alert-error-bg);
+  border-color: var(--alert-error-border);
 }
 
 /* Make theme-selector transparent to flex layout so the select stretches */

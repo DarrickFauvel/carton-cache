@@ -55,21 +55,40 @@
           <summary class="avatar" data-color="<%= it.user.avatarColor %>"><%= it.user.initials %></summary>
           <div class="avatar-dropdown">
             <header class="avatar-dropdown__header">
-              <span class="avatar-dropdown__name"><%= it.user.name %></span>
-              <span class="avatar-dropdown__role"><%= it.user.role %></span>
+              <span class="avatar avatar--md" data-color="<%= it.user.avatarColor %>"><%= it.user.initials %></span>
+              <div class="avatar-dropdown__info">
+                <span class="avatar-dropdown__name"><%= it.user.name %></span>
+                <span class="avatar-dropdown__role"><%= it.user.role %></span>
+              </div>
             </header>
             <nav class="avatar-dropdown__nav">
-              <a href="/profile">Profile settings</a>
-              <a href="/cartons">Carton types</a>
+              <a href="/profile">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15" aria-hidden="true"><path d="M10 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-7 9a7 7 0 1 1 14 0H3Z"/></svg>
+                Profile settings
+              </a>
+              <a href="/cartons">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15" aria-hidden="true"><path d="M2 3a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3ZM2 9a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V9Zm11-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-4Z"/></svg>
+                Carton types
+              </a>
               <% if (it.user.role === 'admin' || it.user.role === 'manager') { %>
-              <a href="/alerts">Alerts</a>
-              <a href="/locations">Locations</a>
+              <a href="/alerts">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15" aria-hidden="true"><path fill-rule="evenodd" d="M10 2a6 6 0 0 0-6 6c0 1.887-.454 3.665-1.257 5.234a.75.75 0 0 0 .515 1.076 32.94 32.94 0 0 0 3.256.508 3.5 3.5 0 0 0 6.972 0 32.933 32.933 0 0 0 3.256-.508.75.75 0 0 0 .515-1.076A11.448 11.448 0 0 1 16 8a6 6 0 0 0-6-6Z" clip-rule="evenodd"/></svg>
+                Alerts
+              </a>
+              <a href="/locations">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15" aria-hidden="true"><path fill-rule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 0 0 .281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 1 0 3 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 0 0 2.273 1.765 11.842 11.842 0 0 0 .976.544l.062.029.018.008.006.003ZM10 11.25a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Z" clip-rule="evenodd"/></svg>
+                Locations
+              </a>
               <% } %>
               <% if (it.user.role === 'admin') { %>
-              <a href="/users">Users</a>
+              <a href="/users">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15" aria-hidden="true"><path d="M7 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM14.5 9a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM1.615 16.428a1.224 1.224 0 0 1-.569-1.175 6.002 6.002 0 0 1 11.908 0c.058.467-.172.92-.57 1.174A9.953 9.953 0 0 1 7 18a9.953 9.953 0 0 1-5.385-1.572ZM14.5 16h-.106c.07-.297.088-.611.048-.933a7.47 7.47 0 0 0-1.588-3.755 4.502 4.502 0 0 1 5.874 2.636.818.818 0 0 1-.36.98A7.465 7.465 0 0 1 14.5 16Z"/></svg>
+                Users
+              </a>
               <% } %>
             </nav>
             <div class="avatar-dropdown__theme">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15" aria-hidden="true"><path fill-rule="evenodd" d="M7.455 2.004a.75.75 0 0 1 .26.77 7 7 0 0 0 9.958 7.967.75.75 0 0 1 1.067.853A8.5 8.5 0 1 1 6.647 1.921a.75.75 0 0 1 .808.083Z" clip-rule="evenodd"/></svg>
               <span>Theme</span>
               <theme-selector>
                 <select class="btn btn-ghost theme-select" aria-label="Theme">
@@ -81,7 +100,7 @@
             </div>
             <div class="avatar-dropdown__signout">
               <form method="post" action="/logout">
-                <button type="submit" class="btn btn--danger">Sign out</button>
+                <button type="submit" class="btn avatar-dropdown__signout-btn">Sign out</button>
               </form>
             </div>
           </div>
