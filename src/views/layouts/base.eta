@@ -11,6 +11,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Carton Cache" />
   <title><%= it.title %> — Carton Cache</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/kelpui@1/css/kelp.css" />
   <link rel="stylesheet" href="/css/main.css" />
   <link rel="manifest" href="/manifest.json" />
   <link rel="apple-touch-icon" href="/icons/icon.svg" />
@@ -20,6 +21,8 @@
   <% }) } %>
   <script type="module" src="/js/components/theme-selector.js"></script>
   <script type="module" src="/js/components/avatar-menu.js"></script>
+  <script type="module" src="/js/components/qr-modal.js"></script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/kelpui@1/js/kelp.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js');
@@ -31,13 +34,21 @@
   <header class="site-header">
     <a href="/" class="brand">Carton Cache</a>
     <nav class="site-nav">
-      <a href="/">Dashboard</a>
-      <a href="/transactions/receive">Receive</a>
-      <a href="/transactions/consume">Consume</a>
-      <a href="/transactions/transfer">Transfer</a>
-      <a href="/transactions">History</a>
-      <a href="/reports">Reports</a>
+      <a href="/" <%~ it.path === '/' ? 'aria-current="page"' : '' %>>Dashboard</a>
+      <a href="/transactions/receive" <%~ it.path === '/transactions/receive' ? 'aria-current="page"' : '' %>>Receive</a>
+      <a href="/transactions/consume" <%~ it.path === '/transactions/consume' ? 'aria-current="page"' : '' %>>Consume</a>
+      <a href="/transactions/transfer" <%~ it.path === '/transactions/transfer' ? 'aria-current="page"' : '' %>>Transfer</a>
+      <a href="/transactions" <%~ it.path === '/transactions' ? 'aria-current="page"' : '' %>>History</a>
+      <a href="/reports" <%~ it.path?.startsWith('/reports') ? 'aria-current="page"' : '' %>>Reports</a>
     </nav>
+    <div class="header-tools">
+    <qr-modal>
+      <button type="button" class="btn btn-ghost btn--icon" title="QR code for this page" aria-label="QR code for this page">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+          <path d="M3 3h7v7H3V3zm1.5 1.5v4h4v-4h-4zm.5.5h3v3H5V5zM14 3h7v7h-7V3zm1.5 1.5v4h4v-4h-4zm.5.5h3v3h-3V5zM3 14h7v7H3v-7zm1.5 1.5v4h4v-4h-4zm.5.5h3v3H5v-3zM14 14h2v2h-2v-2zm3 0h2v2h-2v-2zm3 0h1v1h-1v-1zm-6 3h2v2h-2v-2zm3 0h2v1h-2v-1zm-3 2h2v2h-2v-2zm3 1h2v1h-2v-1zm2-1h1v3h-1v-3zm-5-5h1v1h-1v-1z"/>
+        </svg>
+      </button>
+    </qr-modal>
     <avatar-menu>
       <details>
         <summary class="avatar" data-color="<%= it.user.avatarColor %>"><%= it.user.initials %></summary>
@@ -75,6 +86,7 @@
         </div>
       </details>
     </avatar-menu>
+    </div>
   </header>
   <% } %>
 

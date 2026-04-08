@@ -10,6 +10,7 @@
   --color-primary:    #2563eb;
   --color-primary-fg: #ffffff;
   --color-danger:     #dc2626;
+  --color-danger-fg:  #ffffff;
   --color-warning:    #d97706;
   --color-success:    #16a34a;
 
@@ -42,6 +43,7 @@
   --badge-poor-bg:        #fee2e2;
   --card-low-bg:          #fffbeb;
   --card-low-border:      var(--color-warning);
+  --quick-action-border:  rgba(0, 0, 0, 0.18);
 }
 
 /* ── Dark mode tokens ─────────────────────────────────────────────────────── */
@@ -66,6 +68,7 @@
     --badge-fair-bg:        #261c06;
     --badge-poor-bg:        #2c1010;
     --card-low-bg:          #241908;
+    --quick-action-border:  rgba(255, 255, 255, 0.15);
   }
 }
 
@@ -88,6 +91,7 @@
   --badge-fair-bg:        #261c06;
   --badge-poor-bg:        #2c1010;
   --card-low-bg:          #241908;
+  --quick-action-border:  rgba(255, 255, 255, 0.15);
 }
 
 /* ── Reset ────────────────────────────────────────────────────────────────── */
@@ -191,9 +195,16 @@ h1, h2, h3 { line-height: 1.2; }
   }
 }
 
+/* ── Header tools (QR + avatar) ───────────────────────────────────────────── */
+.header-tools {
+  grid-area: logout;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
 /* ── Avatar & dropdown ────────────────────────────────────────────────────── */
 avatar-menu {
-  grid-area: logout;
   position: relative;
   display: flex;
   align-items: center;
@@ -242,7 +253,8 @@ summary.avatar::-webkit-details-marker { display: none; }
   position: absolute;
   top: calc(100% + var(--space-2));
   right: 0;
-  min-width: 13rem;
+  min-width: 15rem;
+  max-width: calc(100vw - var(--space-6));
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
@@ -256,6 +268,7 @@ summary.avatar::-webkit-details-marker { display: none; }
     display: flex;
     flex-direction: column;
     gap: var(--space-1);
+    background: var(--color-bg);
   }
 
   &__name { font-weight: 600; font-size: 0.9rem; }
@@ -298,11 +311,14 @@ summary.avatar::-webkit-details-marker { display: none; }
   &__signout {
     padding: var(--space-2);
 
-    button {
-      width: 100%;
-    }
+    form { width: 100%; }
+
+    button { width: 100%; }
   }
 }
+
+/* Make theme-selector transparent to flex layout so the select stretches */
+theme-selector { display: contents; }
 
 .theme-select {
   font-size: 0.85rem;
@@ -419,6 +435,18 @@ summary.avatar::-webkit-details-marker { display: none; }
 /* ── Utilities ────────────────────────────────────────────────────────────── */
 .stack { display: flex; flex-direction: column; gap: var(--space-4); }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .page-header {
   display: flex;
   align-items: center;
@@ -503,6 +531,35 @@ label {
 
 .form-group { display: flex; flex-direction: column; gap: var(--space-1); }
 
+/* Remove browser-default border/padding from fieldsets used as form-groups */
+fieldset.form-group {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Full-width submit on standalone transaction forms */
+.form-card > form > button[type="submit"] {
+  width: 100%;
+  min-height: 3rem;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: var(--space-2);
+}
+
+.field-hint {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  & label { margin-bottom: 0; }
+}
+
 .form-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -521,8 +578,11 @@ label {
   gap: var(--space-2);
   align-items: center;
 
-  & input { flex: 1; min-width: 0; }
+  & input,
+  & select { flex: 1; min-width: 0; }
 }
+
+carton-scanner { display: contents; }
 
 .dims-row {
   display: grid;
@@ -563,9 +623,90 @@ label {
     color: var(--color-warning);
     border: 1px solid var(--alert-warning-border);
   }
+
+  &--success {
+    background: var(--badge-good-bg);
+    color: var(--color-success);
+    border: 1px solid var(--badge-good-bg);
+  }
+}
+
+/* ── Quick actions ────────────────────────────────────────────────────────── */
+.quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.quick-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 8rem;
+  padding: var(--space-5) var(--space-4);
+  border-radius: var(--radius);
+  border: 2px solid var(--quick-action-border);
+  box-shadow:
+    inset 0 -4px 0 rgba(0, 0, 0, 0.28),
+    inset 0  1px 0 rgba(255, 255, 255, 0.22);
+  text-decoration: none;
+  text-align: center;
+  gap: var(--space-2);
+  -webkit-tap-highlight-color: transparent;
+  transition: filter 0.12s, transform 0.1s, box-shadow 0.1s;
+
+  &:hover  { filter: brightness(0.94); }
+  &:active {
+    transform: translateY(3px);
+    box-shadow:
+      inset 0 2px 4px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  /* Receive — blue, white fg: 5.2:1 contrast ✓ */
+  &--in {
+    background: var(--color-primary);
+    color: var(--color-primary-fg);
+  }
+
+  /* Consume — red, white fg: 4.8:1 contrast ✓ (passes AA for all text sizes) */
+  &--out {
+    background: var(--color-danger);
+    color: var(--color-danger-fg);
+  }
+}
+
+.quick-action__icon {
+  width: 2rem;
+  height: 2rem;
+}
+
+.quick-action__verb {
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: inherit;
+}
+
+.quick-action__hint {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: inherit;
 }
 
 /* ── Dashboard ────────────────────────────────────────────────────────────── */
+.inventory-heading {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-4);
+}
+
 .location-block {
   margin-bottom: var(--space-8);
   container-type: inline-size;
@@ -613,12 +754,13 @@ label {
     background: var(--card-low-bg);
   }
 
-  &__header { display: flex; flex-direction: column; gap: var(--space-1); }
-  &__name   { font-weight: 600; font-size: 0.95rem; }
-  &__sku    { font-size: 0.75rem; color: var(--color-text-muted); font-family: var(--font-mono); }
-  &__qty    { font-size: 2rem; font-weight: 700; line-height: 1; }
-  &__alert  { font-size: 0.75rem; color: var(--color-warning); font-weight: 600; }
 }
+
+.lot-card__header { display: flex; flex-direction: column; gap: var(--space-1); }
+.lot-card__name   { font-weight: 600; font-size: 0.95rem; }
+.lot-card__sku    { font-size: 0.75rem; color: var(--color-text-muted); font-family: var(--font-mono); }
+.lot-card__qty    { font-size: 2.25rem; font-weight: 800; line-height: 1; color: var(--color-primary); }
+.lot-card__alert  { font-size: 0.75rem; color: var(--color-warning); font-weight: 600; }
 
 /* ── Condition badges ─────────────────────────────────────────────────────── */
 :is(.condition--new, .condition--good, .condition--fair, .condition--poor) {
@@ -652,6 +794,9 @@ label {
 .table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
 }
 
 table {
@@ -666,7 +811,236 @@ table {
     border-bottom: 1px solid var(--color-border);
   }
 
-  & th { font-weight: 600; background: var(--color-bg); }
+  & th {
+    font-weight: 600;
+    background: var(--color-bg);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+  }
+
+  & tbody tr {
+    transition: background 0.1s;
+    &:last-child td { border-bottom: none; }
+    &:hover { background: var(--color-bg); }
+  }
+}
+
+/* ── Icon button ──────────────────────────────────────────────────────────── */
+.btn--icon {
+  min-height: 2.75rem;
+  width: 2.75rem;
+  padding: 0;
+  flex-shrink: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.btn--scan {
+  flex-shrink: 0;
+  padding-inline: var(--space-3);
+  font-size: 0.875rem;
+}
+
+/* ── Barcode scanner dialog ───────────────────────────────────────────────── */
+dialog.scan-dialog {
+  border: none;
+  border-radius: var(--radius);
+  background: #000;
+  color: #fff;
+  padding: var(--space-4);
+  width: min(90vw, 22rem);
+
+  /* Only apply flex when the dialog is actually open.
+     Without [open] scoping, display:flex overrides the UA's
+     display:none for closed dialogs and the dialog stays visible. */
+  &[open] {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  &::backdrop {
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(2px);
+  }
+
+  & form { width: 100%; }
+
+  & button[type="submit"] {
+    background: var(--color-danger);
+    border-color: var(--color-danger);
+    color: #fff;
+    width: 100%;
+  }
+}
+
+.scan-viewport {
+  position: relative;
+  width: min(80vw, 18rem);
+  aspect-ratio: 1;
+  border-radius: var(--radius);
+  overflow: hidden;
+
+  & video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+}
+
+.scan-reticle {
+  position: absolute;
+  inset: 12%;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-color: var(--color-primary);
+    border-style: solid;
+  }
+
+  &::before {
+    top: -2px;
+    left: -2px;
+    border-width: 3px 0 0 3px;
+    border-radius: var(--radius-sm) 0 0 0;
+  }
+
+  &::after {
+    bottom: -2px;
+    right: -2px;
+    border-width: 0 3px 3px 0;
+    border-radius: 0 0 var(--radius-sm) 0;
+  }
+}
+
+/* ── Dialog entry animation ──────────────────────────────────────────────── */
+@keyframes dialog-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+dialog[open] {
+  animation: dialog-enter 0.2s ease-out both;
+}
+
+/* ── Quick-create dialog ──────────────────────────────────────────────────── */
+.quick-create-dialog {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-6);
+  background: var(--color-surface);
+  color: var(--color-text);
+  width: min(90vw, 28rem);
+  max-height: 90dvh;
+  overflow-y: auto;
+
+  &::backdrop {
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+  }
+}
+
+.quick-create-dialog__title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.action-row--end { justify-content: flex-end; }
+
+/* ── Raw scan data disclosure ─────────────────────────────────────────────── */
+.scan-raw {
+  & summary {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+
+    &::-webkit-details-marker { display: none; }
+
+    &::before {
+      content: '▶';
+      font-size: 0.6rem;
+      transition: transform 0.15s;
+    }
+  }
+
+  &[open] summary::before { transform: rotate(90deg); }
+}
+
+.scan-raw__value {
+  margin-top: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+  cursor: default;
+}
+
+/* ── QR dialog ────────────────────────────────────────────────────────────── */
+.qr-dialog {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-6);
+  background: var(--color-surface);
+  color: var(--color-text);
+  width: min(90vw, 20rem);
+
+  &::backdrop {
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+  }
+}
+
+.qr-dialog__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.qr-dialog__label {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.qr-dialog__code {
+  width: 100%;
+  background: #fff;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+
+  & svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+}
+
+.qr-dialog__url {
+  margin: 0;
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+  text-align: center;
+  word-break: break-all;
+  max-width: 100%;
 }
 
 /* ── Error page ───────────────────────────────────────────────────────────── */
