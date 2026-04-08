@@ -4,10 +4,8 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { db } from "./client.js";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
 async function migrate() {
-  const dir = join(__dirname, "migrations");
+  const dir = join(process.cwd(), "src", "db", "migrations");
   const files = readdirSync(dir).filter((f) => f.endsWith(".sql")).sort();
 
   for (const file of files) {
