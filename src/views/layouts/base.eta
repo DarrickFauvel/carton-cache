@@ -121,10 +121,12 @@
   <footer class="site-footer">
     <div class="site-footer__inner">
       <span class="site-footer__brand">Carton Cache</span>
+      <% if (!it.user) { %>
       <nav class="site-footer__links" aria-label="Footer">
         <a href="/login">Sign in</a>
         <a href="/register">Sign up</a>
       </nav>
+      <% } %>
       <small class="site-footer__copy">&copy; <%= new Date().getFullYear() %> Carton Cache</small>
     </div>
   </footer>
