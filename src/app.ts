@@ -24,7 +24,8 @@ export function createApp() {
   const app = express();
 
   // ── View engine ──────────────────────────────────────────────────────────────
-  const viewsDir = join(__dirname, "views");
+  // src/views is always present (git repo); avoids copying .eta files to dist/
+  const viewsDir = join(process.cwd(), "src", "views");
   const eta = new Eta({ views: viewsDir, cache: process.env.NODE_ENV === "production" });
   app.engine("eta", (path, data, cb) => {
     // Express resolves to an absolute path; strip the views dir so Eta doesn't double it

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc && node esbuild.config.js && cp -r src/views dist/views",
+    "build": "tsc && node esbuild.config.js",
     "start": "node dist/index.js",
     "migrate": "tsx src/db/migrate.ts",
     "generate-vapid": "tsx src/scripts/generate-vapid.ts"
