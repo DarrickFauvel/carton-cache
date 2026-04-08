@@ -7,9 +7,8 @@
 <section class="form-card">
   <form method="post" action="/transactions/consume" class="stack">
 
-    <% if (it.locations.length !== 1) { %>
     <div class="form-group">
-      <label for="location_id">Location</label>
+      <label for="location_id">Take from</label>
       <select id="location_id" name="location_id" required>
         <option value="">Select location…</option>
         <% it.locations.forEach(function(loc) { %>
@@ -17,18 +16,26 @@
         <% }) %>
       </select>
     </div>
-    <% } else { %>
-    <input type="hidden" name="location_id" value="<%= it.locations[0].id %>" />
-    <% } %>
 
     <div class="form-group">
       <label for="carton_type_id">Carton type</label>
-      <select id="carton_type_id" name="carton_type_id" required>
-        <option value="">Select carton…</option>
-        <% it.cartons.forEach(function(c) { %>
-        <option value="<%= c.id %>"><%= c.name %><% if (c.sku) { %> — <%= c.sku %><% } %></option>
-        <% }) %>
-      </select>
+      <div class="input-row">
+        <select id="carton_type_id" name="carton_type_id" required>
+          <option value="">Select or scan carton…</option>
+          <% it.cartons.forEach(function(c) { %>
+          <option value="<%= c.id %>"><%= c.name %><% if (c.sku) { %> — <%= c.sku %><% } %></option>
+          <% }) %>
+        </select>
+        <carton-scanner
+          lookup="/cartons/lookup"
+          target="carton_type_id"
+          quantity-target="quantity"
+          notes-target="notes">
+          <barcode-scanner>
+            <button type="button" class="btn btn--scan" aria-label="Scan carton barcode">Scan</button>
+          </barcode-scanner>
+        </carton-scanner>
+      </div>
     </div>
 
     <div class="form-group">

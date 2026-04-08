@@ -39,6 +39,7 @@ export function toInitials(name: string): string {
 
 /** Attach session user data to res.locals for use in templates. */
 export function locals(req: Request, res: Response, next: NextFunction) {
+  res.locals.path = req.path;
   res.locals.user = req.session.userId
     ? {
         id: req.session.userId,

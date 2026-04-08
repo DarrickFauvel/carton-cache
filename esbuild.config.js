@@ -5,6 +5,9 @@ const components = [
   "barcode-scanner",
   "theme-selector",
   "avatar-menu",
+  "quick-create",
+  "carton-scanner",
+  "qr-modal",
 ];
 
 await Promise.all(

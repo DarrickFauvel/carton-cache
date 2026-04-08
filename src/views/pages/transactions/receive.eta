@@ -9,7 +9,24 @@
 
     <% if (it.locations.length !== 1) { %>
     <div class="form-group">
-      <label for="location_id">Location</label>
+      <div class="label-row">
+        <label for="location_id">Location</label>
+        <% if (it.canCreateLocation) { %>
+        <quick-create api="/locations" target="location_id" label="New Location">
+          <button type="button" class="btn btn-ghost" aria-label="New location">+ Location</button>
+          <template>
+            <div class="form-group">
+              <label>Name</label>
+              <input name="name" type="text" required />
+            </div>
+            <div class="form-group">
+              <label>Address <small>(optional)</small></label>
+              <input name="address" type="text" />
+            </div>
+          </template>
+        </quick-create>
+        <% } %>
+      </div>
       <select id="location_id" name="location_id" required>
         <option value="">Select location…</option>
         <% it.locations.forEach(function(loc) { %>
@@ -22,13 +39,76 @@
     <% } %>
 
     <div class="form-group">
-      <label for="carton_type_id">Carton type</label>
-      <select id="carton_type_id" name="carton_type_id" required>
-        <option value="">Select carton…</option>
-        <% it.cartons.forEach(function(c) { %>
-        <option value="<%= c.id %>"><%= c.name %><% if (c.sku) { %> — <%= c.sku %><% } %></option>
-        <% }) %>
-      </select>
+      <div class="label-row">
+        <label for="carton_type_id">Carton type</label>
+        <% if (it.canCreateCarton) { %>
+        <quick-create api="/cartons" target="carton_type_id" label="New Carton Type">
+          <button type="button" class="btn btn-ghost" aria-label="New carton type">+ Carton type</button>
+          <template>
+            <div class="form-group">
+              <label>Name</label>
+              <input name="name" type="text" required />
+            </div>
+            <div class="form-group">
+              <label>Barcode <small>(optional)</small></label>
+              <input name="barcode" type="text" inputmode="numeric" autocomplete="off" />
+              <small class="field-hint" data-prefill="_barcode_hint" hidden></small>
+            </div>
+            <div class="form-group">
+              <label>SKU <small>(optional)</small></label>
+              <input name="sku" type="text" />
+            </div>
+            <div class="form-group">
+              <label>Unit cost <small>(optional)</small></label>
+              <input name="unit_cost" type="number" inputmode="decimal" min="0" step="0.01" />
+            </div>
+            <fieldset class="form-group">
+              <legend>Dimensions (cm) <small>(optional)</small></legend>
+              <div class="dims-row">
+                <div class="form-group">
+                  <label>L</label>
+                  <input name="length_cm" type="number" inputmode="decimal" min="0" step="0.1" placeholder="—" />
+                </div>
+                <div class="form-group">
+                  <label>W</label>
+                  <input name="width_cm" type="number" inputmode="decimal" min="0" step="0.1" placeholder="—" />
+                </div>
+                <div class="form-group">
+                  <label>H</label>
+                  <input name="height_cm" type="number" inputmode="decimal" min="0" step="0.1" placeholder="—" />
+                </div>
+              </div>
+            </fieldset>
+            <div class="form-group">
+              <label>Notes <small>(optional)</small></label>
+              <textarea name="notes" rows="2"></textarea>
+            </div>
+            <details class="scan-raw">
+              <summary>Raw scan data</summary>
+              <input name="_scanned" type="text" readonly class="scan-raw__value" />
+            </details>
+          </template>
+        </quick-create>
+        <% } %>
+      </div>
+      <div class="input-row">
+        <select id="carton_type_id" name="carton_type_id" required>
+          <option value="">Select or scan carton…</option>
+          <% it.cartons.forEach(function(c) { %>
+          <option value="<%= c.id %>"><%= c.name %><% if (c.sku) { %> — <%= c.sku %><% } %></option>
+          <% }) %>
+        </select>
+        <carton-scanner
+          lookup="/cartons/lookup"
+          target="carton_type_id"
+          quantity-target="quantity"
+          notes-target="notes"
+          <% if (it.canCreateCarton) { %>create="quick-create[target='carton_type_id']"<% } %>>
+          <barcode-scanner>
+            <button type="button" class="btn btn--scan" aria-label="Scan carton barcode">Scan</button>
+          </barcode-scanner>
+        </carton-scanner>
+      </div>
     </div>
 
     <div class="form-group">

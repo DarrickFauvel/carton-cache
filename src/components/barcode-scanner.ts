@@ -26,7 +26,7 @@ declare class BarcodeDetector {
 
 class BarcodeScanner extends HTMLElement {
   private video: HTMLVideoElement | null = null;
-  private overlay: HTMLDivElement | null = null;
+  private overlay: HTMLDialogElement | null = null;
   private stream: MediaStream | null = null;
   private animFrame: number | null = null;
   private detector: BarcodeDetector | null = null;
@@ -36,27 +36,31 @@ class BarcodeScanner extends HTMLElement {
     const trigger = this.querySelector<HTMLButtonElement>("button");
     if (!trigger) return;
 
-    // Build and append the camera overlay (dynamic UI, appropriate for JS)
-    this.overlay = document.createElement("div");
-    this.overlay.className = "scan-overlay";
-    this.overlay.hidden = true;
+    // Build and append the camera dialog (dynamic UI, appropriate for JS)
+    this.overlay = document.createElement("dialog");
+    this.overlay.className = "scan-dialog";
     this.overlay.innerHTML = `
       <div class="scan-viewport">
         <video autoplay playsinline muted></video>
         <div class="scan-reticle"></div>
       </div>
-      <button type="button" class="btn btn--danger scan-cancel">Cancel</button>
+      <form method="dialog">
+        <button type="submit" class="btn btn--danger">Cancel</button>
+      </form>
     `;
-    this.appendChild(this.overlay);
+    document.body.appendChild(this.overlay);
 
     this.video = this.overlay.querySelector("video");
 
     trigger.addEventListener("click", () => this.open());
-    this.overlay.querySelector(".scan-cancel")!.addEventListener("click", () => this.close());
+
+    // Use the native dialog close event (fires for both Cancel button and Esc)
+    this.overlay.addEventListener("close", () => this.stopStream());
   }
 
   disconnectedCallback() {
-    this.close();
+    this.stopStream();
+    this.overlay?.remove();
   }
 
   private async open() {
@@ -65,7 +69,7 @@ class BarcodeScanner extends HTMLElement {
         video: { facingMode: "environment" },
       });
       this.video!.srcObject = this.stream;
-      this.overlay!.hidden = false;
+      this.overlay!.showModal();
       this.detector = await this.buildDetector();
       this.scan();
     } catch (err) {
@@ -73,11 +77,11 @@ class BarcodeScanner extends HTMLElement {
     }
   }
 
-  private close() {
+  private stopStream() {
     if (this.animFrame !== null) cancelAnimationFrame(this.animFrame);
+    this.animFrame = null;
     this.stream?.getTracks().forEach((t) => t.stop());
     this.stream = null;
-    if (this.overlay) this.overlay.hidden = true;
   }
 
   private async buildDetector(): Promise<BarcodeDetector> {
@@ -120,7 +124,8 @@ class BarcodeScanner extends HTMLElement {
   }
 
   private onDetected(value: string) {
-    this.close();
+    this.overlay?.close();
+    this.stopStream();
 
     const targetId = this.getAttribute("target");
     if (targetId) {

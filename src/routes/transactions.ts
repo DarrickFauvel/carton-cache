@@ -13,10 +13,14 @@ router.get("/receive", requireAuth, async (req, res) => {
     db.execute("SELECT id, name FROM locations WHERE active = 1 ORDER BY name"),
     db.execute("SELECT id, name, sku, barcode, unit_cost FROM carton_types ORDER BY name"),
   ]);
+  const role = req.session.userRole;
   res.render("pages/transactions/receive", {
     title: "Receive Stock",
     locations: locations.rows,
     cartons: cartons.rows,
+    canCreateLocation: role === "admin",
+    canCreateCarton: role === "admin" || role === "manager",
+    componentScripts: ["barcode-scanner", "quick-create", "carton-scanner"],
   });
 });
 
@@ -45,6 +49,7 @@ router.get("/consume", requireAuth, async (req, res) => {
     title: "Consume Stock",
     locations: locations.rows,
     cartons: cartons.rows,
+    componentScripts: ["barcode-scanner", "carton-scanner"],
   });
 });
 

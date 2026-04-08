@@ -10,7 +10,7 @@
 </div>
 
 <% if (it.saved) { %>
-<p class="alert alert--warning" role="status">Saved.</p>
+<p class="alert alert--success" role="status">Saved.</p>
 <% } %>
 
 <% if (it.locations.length === 0) { %>
