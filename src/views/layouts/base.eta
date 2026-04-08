@@ -127,7 +127,7 @@
         <a href="/register">Sign up</a>
       </nav>
       <% } %>
-      <small class="site-footer__copy">&copy; <%= new Date().getFullYear() %> Carton Cache</small>
+      <small class="site-footer__copy">&copy; <%= new Date().getFullYear() %> Carton Cache &mdash; Built by <a href="https://darrickdevelops.com" target="_blank" rel="noopener">Darrick Develops</a></small>
     </div>
   </footer>
 </body>

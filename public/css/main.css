@@ -562,6 +562,15 @@ theme-selector { display: contents; }
 
 .site-footer__copy { color: var(--color-text-muted); }
 
+.site-footer__copy a {
+  color: var(--color-text-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.1s;
+}
+
+.site-footer__copy a:hover { color: var(--color-text); }
+
 /* ── Utilities ────────────────────────────────────────────────────────────── */
 .stack { display: flex; flex-direction: column; gap: var(--space-4); }
 
