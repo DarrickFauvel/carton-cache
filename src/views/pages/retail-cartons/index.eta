@@ -1,0 +1,74 @@
+<% layout('/layouts/base') %>
+
+<div class="page-header">
+  <h1>Retail Carton Options</h1>
+  <% if (it.user && (it.user.role === 'admin' || it.user.role === 'manager')) { %>
+  <div class="action-row">
+    <a href="/retail-cartons/new" class="btn btn--primary">+ New option</a>
+  </div>
+  <% } %>
+</div>
+
+<% if (it.saved) { %>
+<p class="alert alert--success" role="status">Saved.</p>
+<% } %>
+
+<% if (it.options.length === 0) { %>
+<div class="empty-state">
+  <p>No retail carton options yet.</p>
+  <a href="/retail-cartons/new" class="btn btn--primary">Add your first option</a>
+</div>
+<% } else { %>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Store</th>
+        <th>Name</th>
+        <th>SKU</th>
+        <th>Dimensions (in)</th>
+        <th>Weight (lb)</th>
+        <th>Cost (incl. tax)</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% it.options.forEach(function(o) { %>
+      <tr>
+        <td><%= o.store_name %></td>
+        <td><strong><%= o.name %></strong><% if (o.notes) { %><br><small><%= o.notes %></small><% } %></td>
+        <td><% if (o.sku) { %><code><%= o.sku %></code><% } else { %>—<% } %></td>
+        <td>
+          <% if (o.length_in && o.width_in && o.height_in) { %>
+          <%= o.length_in %> × <%= o.width_in %> × <%= o.height_in %>
+          <% } else { %>—<% } %>
+        </td>
+        <td><%= o.weight_lb != null ? o.weight_lb + ' lb' : '—' %></td>
+        <td>
+          <% if (o.cost == null) { %>—<%
+          } else if (o.tax_percent != null) { %>
+          <%= '$' + (Number(o.cost) * (1 + Number(o.tax_percent) / 100)).toFixed(2) %>
+          <br><small>$<%= Number(o.cost).toFixed(2) %> + <%= o.tax_percent %>% tax</small>
+          <% } else { %>
+          $<%= Number(o.cost).toFixed(2) %>
+          <% } %>
+        </td>
+        <td>
+          <% if (it.user && (it.user.role === 'admin' || it.user.role === 'manager')) { %>
+          <div class="action-row">
+            <a href="/retail-cartons/<%= o.id %>/edit" class="btn btn-ghost">Edit</a>
+            <form method="post" action="/retail-cartons/<%= o.id %>/delete">
+              <button type="submit" class="btn btn--danger"
+                      onclick="return confirm('Delete <%= o.name %>? This cannot be undone.')">
+                Delete
+              </button>
+            </form>
+          </div>
+          <% } %>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>
