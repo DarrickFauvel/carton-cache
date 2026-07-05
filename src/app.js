@@ -1,4 +1,4 @@
-import express, { type NextFunction, type Request, type Response } from "express";
+import express from "express";
 import session from "express-session";
 import { TursoSessionStore } from "./lib/session-store.js";
 import cookieParser from "cookie-parser";
@@ -33,8 +33,8 @@ export function createApp() {
     // Express resolves to an absolute path; strip the views dir so Eta doesn't double it
     const rel = path.startsWith(viewsDir) ? path.slice(viewsDir.length) : path;
     eta
-      .renderAsync(rel, data as Record<string, unknown>)
-      .then((html: string) => cb(null, html))
+      .renderAsync(rel, /** @type {Record<string, unknown>} */ (data))
+      .then((html) => cb(null, html))
       .catch(cb);
   });
   app.set("view engine", "eta");
@@ -86,14 +86,21 @@ export function createApp() {
   });
 
   // ── 500 ──────────────────────────────────────────────────────────────────────
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    console.error(err);
-    res.status(500).render("pages/error", {
-      title: "Server Error",
-      message: process.env.NODE_ENV === "production" ? "Something went wrong." : err.message,
-    });
-  });
+  app.use(
+    /**
+     * @param {Error} err
+     * @param {import("express").Request} _req
+     * @param {import("express").Response} res
+     * @param {import("express").NextFunction} _next
+     */
+    (err, _req, res, _next) => {
+      console.error(err);
+      res.status(500).render("pages/error", {
+        title: "Server Error",
+        message: process.env.NODE_ENV === "production" ? "Something went wrong." : err.message,
+      });
+    }
+  );
 
   return app;
 }

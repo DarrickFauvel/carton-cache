@@ -7,89 +7,69 @@
 
 import { db } from "../db/client.js";
 import { ulid, now } from "../lib/id.js";
-import type { Condition, TransactionType } from "../types.js";
 
-interface ReceiveArgs {
-  orgId: string;
-  locationId: string;
-  cartonTypeId: string;
-  condition: Condition;
-  quantity: number;
-  unitCostOverride?: number;
-  userId: string;
-  notes?: string;
-}
+/** @typedef {import("../types.js").Condition} Condition */
+/** @typedef {import("../types.js").TransactionType} TransactionType */
 
-interface ConsumeArgs {
-  orgId: string;
-  locationId: string;
-  cartonTypeId: string;
-  condition: Condition;
-  quantity: number;
-  userId: string;
-  notes?: string;
-}
+/**
+ * @typedef {object} ReceiveArgs
+ * @property {string} orgId
+ * @property {string} locationId
+ * @property {string} cartonTypeId
+ * @property {Condition} condition
+ * @property {number} quantity
+ * @property {number} [unitCostOverride]
+ * @property {string} userId
+ * @property {string} [notes]
+ */
 
-interface TransferArgs {
-  orgId: string;
-  fromLocationId: string;
-  toLocationId: string;
-  cartonTypeId: string;
-  condition: Condition;
-  quantity: number;
-  userId: string;
-  notes?: string;
-}
+/**
+ * @typedef {object} ConsumeArgs
+ * @property {string} orgId
+ * @property {string} locationId
+ * @property {string} cartonTypeId
+ * @property {Condition} condition
+ * @property {number} quantity
+ * @property {string} userId
+ * @property {string} [notes]
+ */
 
-interface AdjustArgs {
-  orgId: string;
-  locationId: string;
-  cartonTypeId: string;
-  condition: Condition;
-  newQuantity: number;
-  userId: string;
-  notes: string; // mandatory for adjustments
-}
+/**
+ * @typedef {object} TransferArgs
+ * @property {string} orgId
+ * @property {string} fromLocationId
+ * @property {string} toLocationId
+ * @property {string} cartonTypeId
+ * @property {Condition} condition
+ * @property {number} quantity
+ * @property {string} userId
+ * @property {string} [notes]
+ */
 
-/** Upsert an InventoryLot, incrementing or decrementing quantity. */
-async function upsertLot(
-  locationId: string,
-  cartonTypeId: string,
-  condition: Condition,
-  delta: number,
-  ts: number
-) {
-  await db.execute({
-    sql: `
-      INSERT INTO inventory_lots (id, location_id, carton_type_id, condition, quantity, updated_at)
-      VALUES (?, ?, ?, ?, MAX(0, ?), ?)
-      ON CONFLICT (location_id, carton_type_id, condition)
-      DO UPDATE SET
-        quantity = MAX(0, quantity + excluded.quantity - ?),
-        updated_at = excluded.updated_at
-    `,
-    // The ON CONFLICT math: we upsert with `delta` as initial quantity for new rows,
-    // and add `delta` to existing rows (the excluded.quantity trick needs a small rewrite):
-    args: [ulid(), locationId, cartonTypeId, condition, delta, ts, 0],
-  });
-  // Simpler and clearer as two statements inside a batch:
-}
+/**
+ * @typedef {object} AdjustArgs
+ * @property {string} orgId
+ * @property {string} locationId
+ * @property {string} cartonTypeId
+ * @property {Condition} condition
+ * @property {number} newQuantity
+ * @property {string} userId
+ * @property {string} notes mandatory for adjustments
+ */
 
-/** Insert a transaction record. Returns the new transaction id. */
-async function insertTx(
-  orgId: string,
-  type: TransactionType,
-  cartonTypeId: string,
-  condition: Condition,
-  quantity: number,
-  locationId: string,
-  userId: string,
-  opts: {
-    unitCostSnapshot?: number;
-    linkedTransactionId?: string;
-    notes?: string;
-  } = {}
-): Promise<string> {
+/**
+ * Insert a transaction record. Returns the new transaction id.
+ * @param {string} orgId
+ * @param {TransactionType} type
+ * @param {string} cartonTypeId
+ * @param {Condition} condition
+ * @param {number} quantity
+ * @param {string} locationId
+ * @param {string} userId
+ * @param {{ unitCostSnapshot?: number; linkedTransactionId?: string; notes?: string }} [opts]
+ * @returns {Promise<string>}
+ */
+async function insertTx(orgId, type, cartonTypeId, condition, quantity, locationId, userId, opts = {}) {
   const id = ulid();
   const ts = now();
   await db.execute({
@@ -117,7 +97,11 @@ async function insertTx(
   return id;
 }
 
-export async function receive(args: ReceiveArgs): Promise<string> {
+/**
+ * @param {ReceiveArgs} args
+ * @returns {Promise<string>}
+ */
+export async function receive(args) {
   const ts = now();
 
   // Resolve unit cost: override → carton_type.unit_cost → null
@@ -127,7 +111,7 @@ export async function receive(args: ReceiveArgs): Promise<string> {
       sql: "SELECT unit_cost FROM carton_types WHERE id = ? AND org_id = ?",
       args: [args.cartonTypeId, args.orgId],
     });
-    unitCost = (result.rows[0]?.unit_cost as number) ?? null;
+    unitCost = /** @type {number} */ (result.rows[0]?.unit_cost) ?? null;
   }
 
   const txId = await insertTx(
@@ -158,7 +142,11 @@ export async function receive(args: ReceiveArgs): Promise<string> {
   return txId;
 }
 
-export async function consume(args: ConsumeArgs): Promise<string> {
+/**
+ * @param {ConsumeArgs} args
+ * @returns {Promise<string>}
+ */
+export async function consume(args) {
   const ts = now();
 
   const txId = await insertTx(
@@ -184,7 +172,11 @@ export async function consume(args: ConsumeArgs): Promise<string> {
   return txId;
 }
 
-export async function transfer(args: TransferArgs): Promise<[string, string]> {
+/**
+ * @param {TransferArgs} args
+ * @returns {Promise<[string, string]>}
+ */
+export async function transfer(args) {
   const ts = now();
 
   const outId = await insertTx(
@@ -243,14 +235,18 @@ export async function transfer(args: TransferArgs): Promise<[string, string]> {
   return [outId, inId];
 }
 
-export async function adjust(args: AdjustArgs): Promise<string> {
+/**
+ * @param {AdjustArgs} args
+ * @returns {Promise<string>}
+ */
+export async function adjust(args) {
   const ts = now();
 
   const current = await db.execute({
     sql: "SELECT quantity FROM inventory_lots WHERE location_id = ? AND carton_type_id = ? AND condition = ? AND org_id = ?",
     args: [args.locationId, args.cartonTypeId, args.condition, args.orgId],
   });
-  const currentQty = (current.rows[0]?.quantity as number) ?? 0;
+  const currentQty = /** @type {number} */ (current.rows[0]?.quantity) ?? 0;
   const delta = args.newQuantity - currentQty;
   const quantity = Math.abs(delta) || 1;
 

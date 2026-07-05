@@ -2,6 +2,7 @@ import { Router } from "express";
 import argon2 from "argon2";
 import { db } from "../db/client.js";
 import { requireAuth } from "../middleware/auth.js";
+import { defined } from "../lib/id.js";
 
 const router = Router();
 
@@ -13,7 +14,7 @@ const VALID_COLORS = [
 router.get("/profile", requireAuth, async (req, res) => {
   const result = await db.execute({
     sql: "SELECT id, name, email, role, avatar_color FROM users WHERE id = ?",
-    args: [req.session.userId!],
+    args: [defined(req.session.userId)],
   });
   res.render("pages/profile", {
     title: "Profile",
@@ -24,12 +25,12 @@ router.get("/profile", requireAuth, async (req, res) => {
 });
 
 router.post("/profile", requireAuth, async (req, res) => {
-  const { name, avatar_color, current_password, new_password, confirm_password } = req.body as Record<string, string>;
+  const { name, avatar_color, current_password, new_password, confirm_password } = req.body;
 
-  const renderErr = async (error: string) => {
+  const renderErr = async (/** @type {string} */ error) => {
     const result = await db.execute({
       sql: "SELECT id, name, email, role, avatar_color FROM users WHERE id = ?",
-      args: [req.session.userId!],
+      args: [defined(req.session.userId)],
     });
     res.render("pages/profile", { title: "Profile", record: result.rows[0], saved: false, error });
   };
@@ -41,9 +42,9 @@ router.post("/profile", requireAuth, async (req, res) => {
   if (current_password || new_password || confirm_password) {
     const userResult = await db.execute({
       sql: "SELECT password_hash FROM users WHERE id = ?",
-      args: [req.session.userId!],
+      args: [defined(req.session.userId)],
     });
-    const hash = userResult.rows[0]?.password_hash as string;
+    const hash = /** @type {string} */ (userResult.rows[0]?.password_hash);
     if (!await argon2.verify(hash, current_password)) return renderErr("Current password is incorrect.");
     if (!new_password || new_password.length < 8) return renderErr("New password must be at least 8 characters.");
     if (new_password !== confirm_password) return renderErr("New passwords do not match.");
@@ -51,12 +52,12 @@ router.post("/profile", requireAuth, async (req, res) => {
     const newHash = await argon2.hash(new_password);
     await db.execute({
       sql: "UPDATE users SET name = ?, avatar_color = ?, password_hash = ? WHERE id = ?",
-      args: [name.trim(), avatar_color, newHash, req.session.userId!],
+      args: [name.trim(), avatar_color, newHash, defined(req.session.userId)],
     });
   } else {
     await db.execute({
       sql: "UPDATE users SET name = ?, avatar_color = ? WHERE id = ?",
-      args: [name.trim(), avatar_color, req.session.userId!],
+      args: [name.trim(), avatar_color, defined(req.session.userId)],
     });
   }
 

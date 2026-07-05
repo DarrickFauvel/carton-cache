@@ -1,14 +1,14 @@
 import { Router } from "express";
 import { db } from "../db/client.js";
 import { requireRole } from "../middleware/auth.js";
-import { str } from "../lib/id.js";
+import { str, defined } from "../lib/id.js";
 
 const router = Router();
 
 router.get("/settings", requireRole("admin"), async (req, res) => {
   const result = await db.execute({
     sql: "SELECT default_tax_percent FROM organizations WHERE id = ?",
-    args: [req.session.orgId!],
+    args: [defined(req.session.orgId)],
   });
   res.render("pages/settings", {
     title: "Settings",
@@ -22,7 +22,7 @@ router.post("/settings", requireRole("admin"), async (req, res) => {
   const raw = str(req.body.default_tax_percent).trim();
   const defaultTaxPercent = raw ? parseFloat(raw) : null;
 
-  if (raw && (Number.isNaN(defaultTaxPercent!) || defaultTaxPercent! < 0)) {
+  if (raw && (Number.isNaN(defaultTaxPercent) || /** @type {number} */ (defaultTaxPercent) < 0)) {
     return res.render("pages/settings", {
       title: "Settings",
       defaultTaxPercent: raw,
@@ -33,7 +33,7 @@ router.post("/settings", requireRole("admin"), async (req, res) => {
 
   await db.execute({
     sql: "UPDATE organizations SET default_tax_percent = ? WHERE id = ?",
-    args: [defaultTaxPercent, req.session.orgId!],
+    args: [defaultTaxPercent, defined(req.session.orgId)],
   });
 
   res.redirect("/settings?saved=1");

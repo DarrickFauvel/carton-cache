@@ -4,7 +4,9 @@ import { createHash, randomBytes } from "crypto";
 import { db } from "../db/client.js";
 import { ulid, now } from "../lib/id.js";
 import { sendPasswordReset } from "../services/email.js";
-import type { User, Plan } from "../types.js";
+
+/** @typedef {import("../types.js").User} User */
+/** @typedef {import("../types.js").Plan} Plan */
 
 const router = Router();
 
@@ -23,11 +25,9 @@ router.get("/register", (req, res) => {
 });
 
 router.post("/register", async (req, res) => {
-  const { name, email, password, confirm } = req.body as {
-    name: string; email: string; password: string; confirm: string;
-  };
+  const { name, email, password, confirm } = req.body;
 
-  const renderErr = (error: string) =>
+  const renderErr = (/** @type {string} */ error) =>
     res.render("pages/register", { title: "Create account", error });
 
   if (!name?.trim() || !email?.trim() || !password) {
@@ -84,14 +84,16 @@ router.get("/login", (req, res) => {
 });
 
 router.post("/login", async (req, res) => {
-  const { email, password } = req.body as { email: string; password: string };
+  const { email, password } = req.body;
 
   const result = await db.execute({
     sql: "SELECT u.*, o.plan AS org_plan FROM users u JOIN organizations o ON o.id = u.org_id WHERE u.email = ?",
     args: [email.toLowerCase().trim()],
   });
 
-  const user = result.rows[0] as unknown as (User & { org_plan: Plan }) | undefined;
+  const user = /** @type {(User & { org_plan: Plan }) | undefined} */ (
+    /** @type {unknown} */ (result.rows[0])
+  );
 
   if (!user || !(await argon2.verify(user.password_hash, password))) {
     res.render("pages/login", { title: "Sign in", error: "Invalid email or password.", notice: null });
@@ -101,12 +103,12 @@ router.post("/login", async (req, res) => {
   req.session.userId          = user.id;
   req.session.userRole        = user.role;
   req.session.userName        = user.name;
-  req.session.userLocationIds = JSON.parse(user.location_ids as unknown as string);
+  req.session.userLocationIds = JSON.parse(/** @type {string} */ (/** @type {unknown} */ (user.location_ids)));
   req.session.userAvatarColor = user.avatar_color ?? "color-1";
-  req.session.orgId           = user.org_id as unknown as string;
+  req.session.orgId           = /** @type {string} */ (/** @type {unknown} */ (user.org_id));
   req.session.orgPlan         = user.org_plan;
 
-  const next = (req.query.next as string) || "/";
+  const next = /** @type {string} */ (req.query.next) || "/";
   res.redirect(next);
 });
 
@@ -118,7 +120,7 @@ router.get("/forgot-password", (req, res) => {
 });
 
 router.post("/forgot-password", async (req, res) => {
-  const { email } = req.body as { email: string };
+  const { email } = req.body;
 
   // Always show the "sent" confirmation to avoid user enumeration.
   const renderSent = () =>
@@ -136,7 +138,7 @@ router.post("/forgot-password", async (req, res) => {
 
   if (result.rows.length === 0) return renderSent();
 
-  const userId    = result.rows[0].id as string;
+  const userId    = /** @type {string} */ (result.rows[0].id);
   const rawToken  = randomBytes(32).toString("hex");
   const tokenHash = createHash("sha256").update(rawToken).digest("hex");
   const expiresAt = now() + 60 * 60 * 1000; // 1 hour
@@ -177,10 +179,10 @@ router.get("/reset-password/:token", async (req, res) => {
 });
 
 router.post("/reset-password/:token", async (req, res) => {
-  const { password, confirm } = req.body as { password: string; confirm: string };
+  const { password, confirm } = req.body;
   const tokenHash = createHash("sha256").update(req.params.token).digest("hex");
 
-  const renderErr = (error: string) =>
+  const renderErr = (/** @type {string} */ error) =>
     res.render("pages/reset-password", { title: "Reset password", token: req.params.token, error });
 
   if (!password || password.length < 8) return renderErr("Password must be at least 8 characters.");

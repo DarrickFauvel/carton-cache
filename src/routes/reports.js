@@ -1,15 +1,16 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import { db } from "../db/client.js";
+import { defined } from "../lib/id.js";
 
 const router = Router();
 
 router.get("/", requireAuth, async (req, res) => {
   const { from, to, location } = req.query;
-  const orgId = req.session.orgId!;
+  const orgId = defined(req.session.orgId);
 
-  const fromMs = from ? new Date(from as string).getTime() : Date.now() - 30 * 86400000;
-  const toMs   = to   ? new Date(to as string).getTime() + 86400000 : Date.now();
+  const fromMs = from ? new Date(/** @type {string} */ (from)).getTime() : Date.now() - 30 * 86400000;
+  const toMs   = to   ? new Date(/** @type {string} */ (to)).getTime() + 86400000 : Date.now();
 
   const stockValue = await db.execute({
     sql: `SELECT ct.name, il.condition, il.quantity, il.location_id,
@@ -85,7 +86,7 @@ router.get("/snapshot.csv", requireAuth, async (req, res) => {
           JOIN locations l ON l.id = il.location_id
           WHERE il.org_id = ?
           ORDER BY l.name, ct.name, il.condition`,
-    args: [req.session.orgId!],
+    args: [defined(req.session.orgId)],
   });
 
   const header = "Location,Carton,SKU,Condition,Quantity\n";

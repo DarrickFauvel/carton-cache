@@ -1,12 +1,12 @@
 import { Router } from "express";
 import { requireRole } from "../middleware/auth.js";
 import { db } from "../db/client.js";
-import { ulid, now, str } from "../lib/id.js";
+import { ulid, now, str, defined } from "../lib/id.js";
 
 const router = Router();
 
 router.get("/", requireRole("admin", "manager"), async (req, res) => {
-  const result = await db.execute({ sql: "SELECT * FROM locations WHERE org_id = ? ORDER BY name", args: [req.session.orgId!] });
+  const result = await db.execute({ sql: "SELECT * FROM locations WHERE org_id = ? ORDER BY name", args: [defined(req.session.orgId)] });
   res.render("pages/locations/index", {
     title: "Locations",
     locations: result.rows,
@@ -19,7 +19,7 @@ router.get("/new", requireRole("admin"), (_req, res) => {
 });
 
 router.post("/", requireRole("admin"), async (req, res) => {
-  const orgId   = req.session.orgId!;
+  const orgId   = defined(req.session.orgId);
   const orgPlan = req.session.orgPlan ?? "free";
   const name    = str(req.body.name).trim();
   const address = str(req.body.address).trim() || null;
@@ -59,7 +59,7 @@ router.post("/", requireRole("admin"), async (req, res) => {
 
 router.get("/:id", requireRole("admin", "manager"), async (req, res) => {
   const id    = str(req.params.id);
-  const orgId = req.session.orgId!;
+  const orgId = defined(req.session.orgId);
   const [locResult, lotResult] = await Promise.all([
     db.execute({ sql: "SELECT * FROM locations WHERE id = ? AND org_id = ?", args: [id, orgId] }),
     db.execute({
@@ -73,21 +73,21 @@ router.get("/:id", requireRole("admin", "manager"), async (req, res) => {
   ]);
   if (!locResult.rows[0]) return res.redirect("/locations");
   res.render("pages/locations/detail", {
-    title: locResult.rows[0].name as string,
+    title: /** @type {string} */ (locResult.rows[0].name),
     location: locResult.rows[0],
     lots: lotResult.rows,
   });
 });
 
 router.get("/:id/edit", requireRole("admin"), async (req, res) => {
-  const result = await db.execute({ sql: "SELECT * FROM locations WHERE id = ? AND org_id = ?", args: [str(req.params.id), req.session.orgId!] });
+  const result = await db.execute({ sql: "SELECT * FROM locations WHERE id = ? AND org_id = ?", args: [str(req.params.id), defined(req.session.orgId)] });
   if (!result.rows[0]) return res.redirect("/locations");
   res.render("pages/locations/form", { title: "Edit Location", location: result.rows[0], error: null });
 });
 
 router.post("/:id/edit", requireRole("admin"), async (req, res) => {
   const id      = str(req.params.id);
-  const orgId   = req.session.orgId!;
+  const orgId   = defined(req.session.orgId);
   const name    = str(req.body.name).trim();
   const address = str(req.body.address).trim() || null;
   const active  = str(req.body.active) === "1" ? 1 : 0;

@@ -17,7 +17,8 @@
 
 const STORAGE_KEY = "cc-theme";
 
-function applyTheme(value: string) {
+/** @param {string} value */
+function applyTheme(value) {
   if (value === "system") {
     delete document.documentElement.dataset.theme;
     localStorage.removeItem(STORAGE_KEY);
@@ -29,7 +30,7 @@ function applyTheme(value: string) {
 
 class ThemeSelector extends HTMLElement {
   connectedCallback() {
-    const select = this.querySelector<HTMLSelectElement>("select");
+    const select = this.querySelector("select");
     if (!select) return;
 
     select.value = localStorage.getItem(STORAGE_KEY) ?? "system";
