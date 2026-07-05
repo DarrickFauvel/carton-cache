@@ -42,6 +42,21 @@ export interface CartonType {
   created_at: number;
 }
 
+export interface RetailCartonOption {
+  id: string;
+  store_name: string;
+  name: string;
+  sku: string | null;
+  length_in: number | null;
+  width_in: number | null;
+  height_in: number | null;
+  weight_lb: number | null;
+  cost: number | null;
+  tax_percent: number | null;
+  notes: string | null;
+  created_at: number;
+}
+
 export interface InventoryLot {
   id: string;
   location_id: string;
@@ -88,6 +103,7 @@ export interface Organization {
   id: string;
   name: string;
   plan: Plan;
+  default_tax_percent: number | null;
   created_at: number;
 }
 

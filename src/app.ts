@@ -11,12 +11,14 @@ import authRouter from "./routes/auth.js";
 import dashboardRouter from "./routes/dashboard.js";
 import transactionsRouter from "./routes/transactions.js";
 import cartonsRouter from "./routes/cartons.js";
+import retailCartonsRouter from "./routes/retail-cartons.js";
 import locationsRouter from "./routes/locations.js";
 import alertsRouter from "./routes/alerts.js";
 import pushRouter from "./routes/push.js";
 import reportsRouter from "./routes/reports.js";
 import usersRouter from "./routes/users.js";
 import profileRouter from "./routes/profile.js";
+import settingsRouter from "./routes/settings.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -66,12 +68,14 @@ export function createApp() {
   app.use("/", dashboardRouter);
   app.use("/transactions", transactionsRouter);
   app.use("/cartons", cartonsRouter);
+  app.use("/retail-cartons", retailCartonsRouter);
   app.use("/locations", locationsRouter);
   app.use("/alerts", alertsRouter);
   app.use("/push", pushRouter);
   app.use("/reports", reportsRouter);
   app.use("/", usersRouter);
   app.use("/", profileRouter);
+  app.use("/", settingsRouter);
 
   // ── 404 ──────────────────────────────────────────────────────────────────────
   app.use((_req, res) => {

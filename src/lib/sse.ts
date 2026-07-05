@@ -15,17 +15,17 @@ export function startSSE(res: Response): void {
   res.flushHeaders();
 }
 
-/** Replace or merge an HTML fragment into the DOM. */
-export function mergeFragments(
+/** Patch (merge) an HTML fragment into the DOM. */
+export function patchElements(
   res: Response,
   html: string,
-  options: { selector?: string; mergeMode?: string } = {}
+  options: { selector?: string; mode?: string } = {}
 ): void {
-  let data = `fragments ${html}`;
+  let data = `elements ${html}`;
   if (options.selector) data = `selector ${options.selector}\n${data}`;
-  if (options.mergeMode) data = `mergeMode ${options.mergeMode}\n${data}`;
+  if (options.mode) data = `mode ${options.mode}\n${data}`;
 
-  res.write(`event: datastar-merge-fragments\n`);
+  res.write(`event: datastar-patch-elements\n`);
   for (const line of data.split("\n")) {
     res.write(`data: ${line}\n`);
   }
@@ -33,19 +33,23 @@ export function mergeFragments(
 }
 
 /** Push signal updates to the client store. */
-export function mergeSignals(
+export function patchSignals(
   res: Response,
   signals: Record<string, unknown>
 ): void {
   const data = `signals ${JSON.stringify(signals)}`;
-  res.write(`event: datastar-merge-signals\n`);
+  res.write(`event: datastar-patch-signals\n`);
   res.write(`data: ${data}\n\n`);
 }
 
-/** Redirect the browser (Datastar action). */
+/** Redirect the browser. v1 has no dedicated script-execution event, so this
+ * patches in a <script> element, which Datastar evaluates on insertion. */
 export function redirect(res: Response, url: string): void {
-  res.write(`event: datastar-execute-script\n`);
-  res.write(`data: script window.location.href = '${url}'\n\n`);
+  patchElements(
+    res,
+    `<script>window.location.href = ${JSON.stringify(url)}</script>`,
+    { selector: "body", mode: "append" }
+  );
 }
 
 export function endSSE(res: Response): void {

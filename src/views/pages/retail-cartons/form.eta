@@ -1,0 +1,83 @@
+<% layout('/layouts/base') %>
+
+<div class="page-header">
+  <h1><%= it.title %></h1>
+  <div class="action-row">
+    <a href="/retail-cartons" class="btn">Cancel</a>
+  </div>
+</div>
+
+<% if (it.error) { %>
+<p class="alert alert--error" role="alert"><%= it.error %></p>
+<% } %>
+
+<section class="form-card">
+  <form method="post" action="<%= it.option ? '/retail-cartons/' + it.option.id + '/edit' : '/retail-cartons' %>" class="stack">
+
+    <div class="form-group">
+      <label for="store_name">Store</label>
+      <input id="store_name" type="text" name="store_name"
+             value="<%= it.option ? it.option.store_name : '' %>" required autofocus placeholder="e.g. Walmart" />
+    </div>
+
+    <div class="form-group">
+      <label for="name">Name</label>
+      <input id="name" type="text" name="name"
+             value="<%= it.option ? it.option.name : '' %>" required />
+    </div>
+
+    <div class="form-group">
+      <label for="sku">SKU <small>(optional)</small></label>
+      <input id="sku" type="text" name="sku"
+             value="<%= it.option ? (it.option.sku || '') : '' %>" />
+    </div>
+
+    <div class="form-group">
+      <label for="cost">Cost <small>(optional, pre-tax)</small></label>
+      <input id="cost" type="number" name="cost" inputmode="decimal" min="0" step="0.01"
+             value="<%= it.option ? (it.option.cost || '') : '' %>" />
+    </div>
+
+    <div class="form-group">
+      <label for="tax_percent">Tax % <small>(optional)</small></label>
+      <input id="tax_percent" type="number" name="tax_percent" inputmode="decimal" min="0" step="0.01"
+             value="<%= it.option ? (it.option.tax_percent || '') : (it.defaultTaxPercent != null ? it.defaultTaxPercent : '') %>" placeholder="e.g. 8.25" />
+    </div>
+
+    <div class="form-group">
+      <label for="weight_lb">Weight (lb) <small>(optional)</small></label>
+      <input id="weight_lb" type="number" name="weight_lb" inputmode="decimal" min="0" step="0.1"
+             value="<%= it.option ? (it.option.weight_lb || '') : '' %>" />
+    </div>
+
+    <fieldset class="form-group">
+      <legend>Outer dimensions (in) <small>(optional)</small></legend>
+      <div class="dims-row">
+        <div class="form-group">
+          <label for="length_in">L</label>
+          <input id="length_in" type="number" name="length_in" inputmode="decimal" min="0" step="0.1"
+                 value="<%= it.option ? (it.option.length_in || '') : '' %>" placeholder="—" />
+        </div>
+        <div class="form-group">
+          <label for="width_in">W</label>
+          <input id="width_in" type="number" name="width_in" inputmode="decimal" min="0" step="0.1"
+                 value="<%= it.option ? (it.option.width_in || '') : '' %>" placeholder="—" />
+        </div>
+        <div class="form-group">
+          <label for="height_in">H</label>
+          <input id="height_in" type="number" name="height_in" inputmode="decimal" min="0" step="0.1"
+                 value="<%= it.option ? (it.option.height_in || '') : '' %>" placeholder="—" />
+        </div>
+      </div>
+    </fieldset>
+
+    <div class="form-group">
+      <label for="notes">Notes <small>(optional)</small></label>
+      <textarea id="notes" name="notes" rows="2"><%= it.option ? (it.option.notes || '') : '' %></textarea>
+    </div>
+
+    <button type="submit" class="btn btn--primary">
+      <%= it.option ? 'Save changes' : 'Create option' %>
+    </button>
+  </form>
+</section>
