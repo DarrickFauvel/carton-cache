@@ -19,12 +19,13 @@
 
 import { parseGS1 } from "./gs1.js";
 
-interface QuickCreateElement extends HTMLElement {
-  open(prefill?: Record<string, string>): void;
-}
+/**
+ * @typedef {HTMLElement & { open(prefill?: Record<string, string>): void }} QuickCreateElement
+ */
 
 class CartonScanner extends HTMLElement {
-  private statusEl: HTMLParagraphElement | null = null;
+  /** @type {HTMLParagraphElement | null} */
+  #statusEl = null;
 
   connectedCallback() {
     const inputRow = this.closest(".input-row") ?? this;
@@ -32,19 +33,20 @@ class CartonScanner extends HTMLElement {
     status.setAttribute("role", "status");
     status.hidden = true;
     inputRow.insertAdjacentElement("afterend", status);
-    this.statusEl = status;
+    this.#statusEl = status;
 
-    this.addEventListener("barcode-detected", (e: Event) => {
-      const barcode = (e as CustomEvent<{ value: string }>).detail.value;
-      void this.handleBarcode(barcode);
+    this.addEventListener("barcode-detected", (e) => {
+      const barcode = /** @type {CustomEvent<{ value: string }>} */ (e).detail.value;
+      void this.#handleBarcode(barcode);
     });
   }
 
   disconnectedCallback() {
-    this.statusEl?.remove();
+    this.#statusEl?.remove();
   }
 
-  private async handleBarcode(barcode: string) {
+  /** @param {string} barcode */
+  async #handleBarcode(barcode) {
     const parsed        = parseGS1(barcode);
     const lookupValue   = parsed.gtin ?? barcode;
     const lookupUrl     = this.getAttribute("lookup")          ?? "/cartons/lookup";
@@ -53,40 +55,42 @@ class CartonScanner extends HTMLElement {
     const notesTargetId = this.getAttribute("notes-target")    ?? "";
     const createSel     = this.getAttribute("create");
 
-    this.setStatus("", false);
+    this.#setStatus("", false);
 
     try {
       const res = await fetch(`${lookupUrl}?barcode=${encodeURIComponent(lookupValue)}`);
 
       if (res.ok) {
-        const carton = await res.json() as { id: string; name: string; sku?: string | null };
-        this.selectCarton(targetId, carton);
-        this.prefillQuantity(qtyTargetId, parsed.quantity);
-        this.prefillNotes(notesTargetId, parsed.lot, parsed.expiry);
+        const carton = /** @type {{ id: string; name: string; sku?: string | null }} */ (await res.json());
+        this.#selectCarton(targetId, carton);
+        this.#prefillQuantity(qtyTargetId, parsed.quantity);
+        this.#prefillNotes(notesTargetId, parsed.lot, parsed.expiry);
       } else if (res.status === 404) {
         if (createSel) {
-          const qc = document.querySelector<QuickCreateElement>(createSel);
-          const prefill: Record<string, string> = { barcode: lookupValue, _scanned: parsed.raw };
+          const qc = /** @type {QuickCreateElement | null} */ (document.querySelector(createSel));
+          /** @type {Record<string, string>} */
+          const prefill = { barcode: lookupValue, _scanned: parsed.raw };
           if (lookupValue === parsed.raw) {
             prefill._barcode_hint = "Decoded from scan";
           }
           qc?.open?.(prefill);
         } else {
-          this.setStatus("No carton found with that barcode.", true);
+          this.#setStatus("No carton found with that barcode.", true);
         }
       } else {
-        this.setStatus("Lookup failed. Please try again.", true);
+        this.#setStatus("Lookup failed. Please try again.", true);
       }
     } catch {
-      this.setStatus("Network error. Please try again.", true);
+      this.#setStatus("Network error. Please try again.", true);
     }
   }
 
-  private selectCarton(
-    targetId: string,
-    carton: { id: string; name: string; sku?: string | null }
-  ) {
-    const select = document.getElementById(targetId) as HTMLSelectElement | null;
+  /**
+   * @param {string} targetId
+   * @param {{ id: string; name: string; sku?: string | null }} carton
+   */
+  #selectCarton(targetId, carton) {
+    const select = /** @type {HTMLSelectElement | null} */ (document.getElementById(targetId));
     if (!select) return;
 
     let opt = [...select.options].find((o) => o.value === carton.id) ?? null;
@@ -102,38 +106,52 @@ class CartonScanner extends HTMLElement {
     select.dispatchEvent(new Event("change", { bubbles: true }));
   }
 
-  private prefillQuantity(targetId: string, quantity: number | undefined) {
+  /**
+   * @param {string} targetId
+   * @param {number | undefined} quantity
+   */
+  #prefillQuantity(targetId, quantity) {
     if (!quantity || !targetId) return;
-    const field = document.getElementById(targetId) as HTMLInputElement | null;
+    const field = /** @type {HTMLInputElement | null} */ (document.getElementById(targetId));
     if (field) {
       field.value = String(quantity);
       field.dispatchEvent(new Event("change", { bubbles: true }));
     }
   }
 
-  private prefillNotes(targetId: string, lot: string | undefined, expiry: string | undefined) {
+  /**
+   * @param {string} targetId
+   * @param {string | undefined} lot
+   * @param {string | undefined} expiry
+   */
+  #prefillNotes(targetId, lot, expiry) {
     if (!targetId) return;
-    const parts: string[] = [];
+    /** @type {string[]} */
+    const parts = [];
     if (lot)    parts.push(`Lot: ${lot}`);
     if (expiry) parts.push(`Expiry: ${expiry}`);
     if (!parts.length) return;
-    const field = document.getElementById(targetId) as HTMLTextAreaElement | null;
+    const field = /** @type {HTMLTextAreaElement | null} */ (document.getElementById(targetId));
     // Only pre-fill if the field is currently empty
     if (field && !field.value.trim()) {
       field.value = parts.join(" · ");
     }
   }
 
-  private setStatus(message: string, isError: boolean) {
-    if (!this.statusEl) return;
+  /**
+   * @param {string} message
+   * @param {boolean} isError
+   */
+  #setStatus(message, isError) {
+    if (!this.#statusEl) return;
     if (!message) {
-      this.statusEl.hidden = true;
-      this.statusEl.textContent = "";
+      this.#statusEl.hidden = true;
+      this.#statusEl.textContent = "";
       return;
     }
-    this.statusEl.className = isError ? "alert alert--error" : "alert alert--warning";
-    this.statusEl.textContent = message;
-    this.statusEl.hidden = false;
+    this.#statusEl.className = isError ? "alert alert--error" : "alert alert--warning";
+    this.#statusEl.textContent = message;
+    this.#statusEl.hidden = false;
   }
 }
 

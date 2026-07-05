@@ -12,7 +12,8 @@
 const GS = "\x1d"; // Group Separator — variable-length AI terminator
 
 // Fixed-length AI definitions (digits of data after the AI digits)
-const FIXED: Record<string, number> = {
+/** @type {Record<string, number>} */
+const FIXED = {
   "00": 18, // SSCC
   "01": 14, // GTIN
   "02": 14, // GTIN of contained items
@@ -26,23 +27,23 @@ const FIXED: Record<string, number> = {
 // Variable-length AIs we care about (all others are ignored)
 const VARIABLE = new Set(["10", "21", "30", "37", "310", "311", "320", "321"]);
 
-export interface GS1Data {
-  /** GTIN-14 from AI 01 or 02 */
-  gtin?: string;
-  /** Lot / batch number from AI 10 */
-  lot?: string;
-  /** Expiry date string (YYMMDD) from AI 17 */
-  expiry?: string;
-  /** Serial number from AI 21 */
-  serial?: string;
-  /** Pack quantity from AI 30 or 37 */
-  quantity?: number;
-  /** The original raw string as received from the scanner */
-  raw: string;
-}
+/**
+ * @typedef {object} GS1Data
+ * @property {string} [gtin] GTIN-14 from AI 01 or 02
+ * @property {string} [lot] Lot / batch number from AI 10
+ * @property {string} [expiry] Expiry date string (YYMMDD) from AI 17
+ * @property {string} [serial] Serial number from AI 21
+ * @property {number} [quantity] Pack quantity from AI 30 or 37
+ * @property {string} raw The original raw string as received from the scanner
+ */
 
-export function parseGS1(raw: string): GS1Data {
-  const result: GS1Data = { raw };
+/**
+ * @param {string} raw
+ * @returns {GS1Data}
+ */
+export function parseGS1(raw) {
+  /** @type {GS1Data} */
+  const result = { raw };
 
   // Strip AIM symbology identifier prefix (e.g. ]C1 for GS1-128)
   let s = raw;
@@ -51,7 +52,8 @@ export function parseGS1(raw: string): GS1Data {
   // ── Human-readable format: (AI)value(AI)value… ───────────────────────────
   if (/^\(\d{2}/.test(s)) {
     const re = /\((\d{2,4})\)([^(]*)/g;
-    let m: RegExpExecArray | null;
+    /** @type {RegExpExecArray | null} */
+    let m;
     while ((m = re.exec(s)) !== null) {
       applyAI(result, m[1], m[2].trim());
     }
@@ -90,7 +92,12 @@ export function parseGS1(raw: string): GS1Data {
   return result;
 }
 
-function applyAI(out: GS1Data, ai: string, value: string) {
+/**
+ * @param {GS1Data} out
+ * @param {string} ai
+ * @param {string} value
+ */
+function applyAI(out, ai, value) {
   switch (ai) {
     case "01":
     case "02":
@@ -114,8 +121,12 @@ function applyAI(out: GS1Data, ai: string, value: string) {
   }
 }
 
-/** Convert YYMMDD → YYYY-MM-DD */
-function formatExpiry(yymmdd: string): string {
+/**
+ * Convert YYMMDD → YYYY-MM-DD
+ * @param {string} yymmdd
+ * @returns {string}
+ */
+function formatExpiry(yymmdd) {
   if (yymmdd.length !== 6) return yymmdd;
   const yy = yymmdd.slice(0, 2);
   const mm = yymmdd.slice(2, 4);

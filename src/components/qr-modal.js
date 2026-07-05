@@ -10,12 +10,15 @@
 import QRCode from "qrcode";
 
 class QrModal extends HTMLElement {
-  private dialog: HTMLDialogElement | null = null;
-  private codeEl: HTMLElement | null = null;
-  private urlEl: HTMLElement | null = null;
+  /** @type {HTMLDialogElement | null} */
+  #dialog = null;
+  /** @type {HTMLElement | null} */
+  #codeEl = null;
+  /** @type {HTMLElement | null} */
+  #urlEl = null;
 
   connectedCallback() {
-    const trigger = this.querySelector<HTMLButtonElement>("button");
+    const trigger = this.querySelector("button");
     if (!trigger) return;
 
     const dialog = document.createElement("dialog");
@@ -44,11 +47,11 @@ class QrModal extends HTMLElement {
     dialog.appendChild(inner);
     document.body.appendChild(dialog);
 
-    this.dialog = dialog;
-    this.codeEl  = codeEl;
-    this.urlEl   = urlEl;
+    this.#dialog = dialog;
+    this.#codeEl  = codeEl;
+    this.#urlEl   = urlEl;
 
-    trigger.addEventListener("click", () => void this.openDialog());
+    trigger.addEventListener("click", () => void this.#openDialog());
 
     dialog.addEventListener("click", (e) => {
       if (e.target === dialog) dialog.close();
@@ -56,10 +59,10 @@ class QrModal extends HTMLElement {
   }
 
   disconnectedCallback() {
-    this.dialog?.remove();
+    this.#dialog?.remove();
   }
 
-  private async openDialog() {
+  async #openDialog() {
     const url = window.location.href;
 
     // Always regenerate so it reflects the current URL
@@ -69,9 +72,9 @@ class QrModal extends HTMLElement {
       color: { dark: "#000000", light: "#ffffff" },
     });
 
-    this.codeEl!.innerHTML = svg;
-    this.urlEl!.textContent = url;
-    this.dialog!.showModal();
+    /** @type {HTMLElement} */ (this.#codeEl).innerHTML = svg;
+    /** @type {HTMLElement} */ (this.#urlEl).textContent = url;
+    /** @type {HTMLDialogElement} */ (this.#dialog).showModal();
   }
 }
 

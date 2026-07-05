@@ -5,9 +5,8 @@
  * https://data-star.dev/reference/sse_events
  */
 
-import type { Response } from "express";
-
-export function startSSE(res: Response): void {
+/** @param {import("express").Response} res */
+export function startSSE(res) {
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
@@ -15,12 +14,13 @@ export function startSSE(res: Response): void {
   res.flushHeaders();
 }
 
-/** Patch (merge) an HTML fragment into the DOM. */
-export function patchElements(
-  res: Response,
-  html: string,
-  options: { selector?: string; mode?: string } = {}
-): void {
+/**
+ * Patch (merge) an HTML fragment into the DOM.
+ * @param {import("express").Response} res
+ * @param {string} html
+ * @param {{ selector?: string; mode?: string }} [options]
+ */
+export function patchElements(res, html, options = {}) {
   let data = `elements ${html}`;
   if (options.selector) data = `selector ${options.selector}\n${data}`;
   if (options.mode) data = `mode ${options.mode}\n${data}`;
@@ -32,19 +32,24 @@ export function patchElements(
   res.write("\n");
 }
 
-/** Push signal updates to the client store. */
-export function patchSignals(
-  res: Response,
-  signals: Record<string, unknown>
-): void {
+/**
+ * Push signal updates to the client store.
+ * @param {import("express").Response} res
+ * @param {Record<string, unknown>} signals
+ */
+export function patchSignals(res, signals) {
   const data = `signals ${JSON.stringify(signals)}`;
   res.write(`event: datastar-patch-signals\n`);
   res.write(`data: ${data}\n\n`);
 }
 
-/** Redirect the browser. v1 has no dedicated script-execution event, so this
- * patches in a <script> element, which Datastar evaluates on insertion. */
-export function redirect(res: Response, url: string): void {
+/**
+ * Redirect the browser. v1 has no dedicated script-execution event, so this
+ * patches in a <script> element, which Datastar evaluates on insertion.
+ * @param {import("express").Response} res
+ * @param {string} url
+ */
+export function redirect(res, url) {
   patchElements(
     res,
     `<script>window.location.href = ${JSON.stringify(url)}</script>`,
@@ -52,6 +57,7 @@ export function redirect(res: Response, url: string): void {
   );
 }
 
-export function endSSE(res: Response): void {
+/** @param {import("express").Response} res */
+export function endSSE(res) {
   res.end();
 }

@@ -1,12 +1,12 @@
 import { Router } from "express";
 import { requireRole } from "../middleware/auth.js";
 import { db } from "../db/client.js";
-import { ulid } from "../lib/id.js";
+import { ulid, str, defined } from "../lib/id.js";
 
 const router = Router();
 
 router.get("/", requireRole("admin", "manager"), async (req, res) => {
-  const orgId = req.session.orgId!;
+  const orgId = defined(req.session.orgId);
   const result = await db.execute({
     sql: `SELECT at.*, ct.name AS carton_name, l.name AS location_name
           FROM alert_thresholds at
@@ -35,7 +35,7 @@ router.post("/", requireRole("admin", "manager"), async (req, res) => {
           VALUES (?, ?, ?, ?, ?, ?)
           ON CONFLICT (location_id, carton_type_id, condition)
           DO UPDATE SET min_quantity = excluded.min_quantity`,
-    args: [ulid(), location_id as string, carton_type_id as string, (condition || "any") as string, parseInt(min_quantity as string, 10), req.session.orgId!],
+    args: [ulid(), location_id, carton_type_id, condition || "any", parseInt(min_quantity, 10), defined(req.session.orgId)],
   });
   res.redirect("/alerts");
 });
@@ -43,7 +43,7 @@ router.post("/", requireRole("admin", "manager"), async (req, res) => {
 router.post("/:id/delete", requireRole("admin", "manager"), async (req, res) => {
   await db.execute({
     sql: "DELETE FROM alert_thresholds WHERE id = ? AND org_id = ?",
-    args: [req.params.id as string, req.session.orgId!],
+    args: [str(req.params.id), defined(req.session.orgId)],
   });
   res.redirect("/alerts");
 });

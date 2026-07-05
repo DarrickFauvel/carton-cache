@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { db } from "../db/client.js";
-import { ulid, now, str } from "../lib/id.js";
+import { ulid, now, str, defined } from "../lib/id.js";
 
 const router = Router();
 
-function parseRetailCartonBody(body: Record<string, string | string[]>) {
+/** @param {Record<string, string | string[]>} body */
+function parseRetailCartonBody(body) {
   const store_name = str(body.store_name);
   const name       = str(body.name);
   const sku        = str(body.sku);
@@ -30,7 +31,11 @@ function parseRetailCartonBody(body: Record<string, string | string[]>) {
   };
 }
 
-function constraintMessage(err: unknown): string | null {
+/**
+ * @param {unknown} err
+ * @returns {string | null}
+ */
+function constraintMessage(err) {
   const msg = err instanceof Error ? err.message : String(err);
   if (msg.includes("UNIQUE")) return "An entry for that store and SKU already exists.";
   return null;
@@ -39,7 +44,7 @@ function constraintMessage(err: unknown): string | null {
 router.get("/", requireAuth, async (req, res) => {
   const result = await db.execute({
     sql: "SELECT * FROM retail_carton_options WHERE org_id = ? ORDER BY store_name, name",
-    args: [req.session.orgId!],
+    args: [defined(req.session.orgId)],
   });
   res.render("pages/retail-cartons/index", {
     title: "Retail Carton Options",
@@ -51,7 +56,7 @@ router.get("/", requireAuth, async (req, res) => {
 router.get("/new", requireRole("admin", "manager"), async (req, res) => {
   const org = await db.execute({
     sql: "SELECT default_tax_percent FROM organizations WHERE id = ?",
-    args: [req.session.orgId!],
+    args: [defined(req.session.orgId)],
   });
   res.render("pages/retail-cartons/form", {
     title: "New Retail Carton Option",
@@ -84,7 +89,7 @@ router.post("/", requireRole("admin", "manager"), async (req, res) => {
       args: [id, fields.store_name, fields.name, fields.sku,
              fields.length_in, fields.width_in, fields.height_in,
              fields.weight_lb, fields.cost, fields.tax_percent, fields.notes,
-             req.session.orgId!, now()],
+             defined(req.session.orgId), now()],
     });
   } catch (err) {
     const error = constraintMessage(err) ?? "Could not save this entry. Please try again.";
@@ -103,7 +108,7 @@ router.post("/", requireRole("admin", "manager"), async (req, res) => {
 router.get("/:id/edit", requireRole("admin", "manager"), async (req, res) => {
   const result = await db.execute({
     sql: "SELECT * FROM retail_carton_options WHERE id = ? AND org_id = ?",
-    args: [str(req.params.id), req.session.orgId!],
+    args: [str(req.params.id), defined(req.session.orgId)],
   });
   if (!result.rows[0]) return res.redirect("/retail-cartons");
   res.render("pages/retail-cartons/form", {
@@ -115,7 +120,7 @@ router.get("/:id/edit", requireRole("admin", "manager"), async (req, res) => {
 
 router.post("/:id/edit", requireRole("admin", "manager"), async (req, res) => {
   const id = str(req.params.id);
-  const orgId = req.session.orgId!;
+  const orgId = defined(req.session.orgId);
   const fields = parseRetailCartonBody(req.body);
 
   if (!fields.store_name || !fields.name) {
@@ -150,7 +155,7 @@ router.post("/:id/edit", requireRole("admin", "manager"), async (req, res) => {
 
 router.post("/:id/delete", requireRole("admin", "manager"), async (req, res) => {
   const id = str(req.params.id);
-  const orgId = req.session.orgId!;
+  const orgId = defined(req.session.orgId);
   await db.execute({ sql: "DELETE FROM retail_carton_options WHERE id = ? AND org_id = ?", args: [id, orgId] });
   res.redirect("/retail-cartons?saved=1");
 });

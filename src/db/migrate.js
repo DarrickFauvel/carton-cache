@@ -1,7 +1,6 @@
-import "dotenv/config";
+import "../env.js";
 import { readdirSync, readFileSync } from "fs";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
+import { join } from "path";
 import { db } from "./client.js";
 
 async function migrate() {
@@ -13,7 +12,7 @@ async function migrate() {
     const sql = readFileSync(join(dir, file), "utf8");
     try {
       await db.executeMultiple(sql);
-    } catch (err: unknown) {
+    } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes("duplicate column name")) {
         console.log("  Already applied, skipping.");

@@ -1,38 +1,48 @@
-import { Store, SessionData } from "express-session";
+import { Store } from "express-session";
 import { db } from "../db/client.js";
 
 export class TursoSessionStore extends Store {
-  private pruneInterval: ReturnType<typeof setInterval>;
+  /** @type {ReturnType<typeof setInterval>} */
+  #pruneInterval;
 
   constructor(pruneIntervalMs = 15 * 60 * 1000) {
     super();
     // Periodically remove expired sessions
-    this.pruneInterval = setInterval(() => this.prune(), pruneIntervalMs);
-    if (this.pruneInterval.unref) this.pruneInterval.unref();
+    this.#pruneInterval = setInterval(() => this.#prune(), pruneIntervalMs);
+    if (this.#pruneInterval.unref) this.#pruneInterval.unref();
   }
 
-  private async prune() {
+  async #prune() {
     await db.execute({
       sql: "DELETE FROM sessions WHERE expires <= ?",
       args: [Math.floor(Date.now() / 1000)],
     });
   }
 
-  get(sid: string, callback: (err: unknown, session?: SessionData | null) => void) {
+  /**
+   * @param {string} sid
+   * @param {(err: unknown, session?: import("express-session").SessionData | null) => void} callback
+   */
+  get(sid, callback) {
     db.execute({ sql: "SELECT data, expires FROM sessions WHERE sid = ?", args: [sid] })
       .then((res) => {
         const row = res.rows[0];
         if (!row) return callback(null, null);
-        if ((row.expires as number) <= Math.floor(Date.now() / 1000)) {
+        if (/** @type {number} */ (row.expires) <= Math.floor(Date.now() / 1000)) {
           this.destroy(sid, () => callback(null, null));
           return;
         }
-        callback(null, JSON.parse(row.data as string));
+        callback(null, JSON.parse(/** @type {string} */ (row.data)));
       })
       .catch(callback);
   }
 
-  set(sid: string, session: SessionData, callback?: (err?: unknown) => void) {
+  /**
+   * @param {string} sid
+   * @param {import("express-session").SessionData} session
+   * @param {(err?: unknown) => void} [callback]
+   */
+  set(sid, session, callback) {
     const expires = session.cookie?.expires
       ? Math.floor(new Date(session.cookie.expires).getTime() / 1000)
       : Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60;
@@ -46,13 +56,22 @@ export class TursoSessionStore extends Store {
       .catch(callback);
   }
 
-  destroy(sid: string, callback?: (err?: unknown) => void) {
+  /**
+   * @param {string} sid
+   * @param {(err?: unknown) => void} [callback]
+   */
+  destroy(sid, callback) {
     db.execute({ sql: "DELETE FROM sessions WHERE sid = ?", args: [sid] })
       .then(() => callback?.())
       .catch(callback);
   }
 
-  touch(sid: string, session: SessionData, callback?: (err?: unknown) => void) {
+  /**
+   * @param {string} sid
+   * @param {import("express-session").SessionData} session
+   * @param {(err?: unknown) => void} [callback]
+   */
+  touch(sid, session, callback) {
     const expires = session.cookie?.expires
       ? Math.floor(new Date(session.cookie.expires).getTime() / 1000)
       : Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60;

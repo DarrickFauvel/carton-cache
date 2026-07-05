@@ -12,39 +12,48 @@
  */
 
 class QuickCreate extends HTMLElement {
-  private dialog: HTMLDialogElement | null = null;
-  private form: HTMLFormElement | null = null;
-  private errorEl: HTMLElement | null = null;
+  /** @type {HTMLDialogElement | null} */
+  #dialog = null;
+  /** @type {HTMLFormElement | null} */
+  #form = null;
+  /** @type {HTMLElement | null} */
+  #errorEl = null;
 
-  /** Open the dialog, optionally pre-filling named fields. */
-  open(prefill: Record<string, string> = {}) {
-    if (!this.dialog || !this.form || !this.errorEl) return;
-    this.form.reset();
+  /**
+   * Open the dialog, optionally pre-filling named fields.
+   * @param {Record<string, string>} [prefill]
+   */
+  open(prefill = {}) {
+    if (!this.#dialog || !this.#form || !this.#errorEl) return;
+    this.#form.reset();
     // Close all <details> before re-opening so state is fresh
-    for (const d of this.form.querySelectorAll<HTMLDetailsElement>("details")) d.open = false;
-    this.errorEl.hidden = true;
+    for (const d of this.#form.querySelectorAll("details")) d.open = false;
+    this.#errorEl.hidden = true;
     for (const [key, value] of Object.entries(prefill)) {
-      const input = this.form.querySelector<HTMLInputElement>(`[name="${key}"]`);
+      const input = /** @type {HTMLInputElement | null} */ (this.#form.querySelector(`[name="${key}"]`));
       if (input) { input.value = value; continue; }
       // Also support non-input hint elements via data-prefill="key"
-      const hint = this.form.querySelector<HTMLElement>(`[data-prefill="${key}"]`);
+      const hint = /** @type {HTMLElement | null} */ (this.#form.querySelector(`[data-prefill="${key}"]`));
       if (hint) { hint.textContent = value; hint.hidden = !value; }
     }
     // Auto-expand any <details> that contain a prefilled field
-    for (const d of this.form.querySelectorAll<HTMLDetailsElement>("details")) {
-      const hasFilled = [...d.querySelectorAll<HTMLInputElement>("input")].some((i) => i.value);
+    for (const d of this.#form.querySelectorAll("details")) {
+      const hasFilled = [...d.querySelectorAll("input")].some((i) => i.value);
       if (hasFilled) d.open = true;
     }
-    this.dialog.showModal();
+    this.#dialog.showModal();
     // Focus first empty required field, or first field
-    const firstEmpty = [...this.dialog.querySelectorAll<HTMLInputElement>("input[required]")]
-      .find((i) => !i.value);
-    (firstEmpty ?? this.dialog.querySelector<HTMLElement>("input, select, textarea"))?.focus();
+    const firstEmpty = /** @type {HTMLElement | undefined} */ (
+      [...this.#dialog.querySelectorAll("input[required]")]
+        .find((i) => !/** @type {HTMLInputElement} */ (i).value)
+    );
+    const fallback = /** @type {HTMLElement | null} */ (this.#dialog.querySelector("input, select, textarea"));
+    (firstEmpty ?? fallback)?.focus();
   }
 
   connectedCallback() {
-    const trigger = this.querySelector<HTMLButtonElement>("button");
-    const tmpl   = this.querySelector<HTMLTemplateElement>("template");
+    const trigger = this.querySelector("button");
+    const tmpl   = this.querySelector("template");
     if (!trigger || !tmpl) return;
 
     const api      = this.getAttribute("api")    ?? "";
@@ -54,7 +63,7 @@ class QuickCreate extends HTMLElement {
     // ── Build <dialog> ──────────────────────────────────────────────────────
     const dialog = document.createElement("dialog");
     dialog.className = "quick-create-dialog";
-    this.dialog = dialog;
+    this.#dialog = dialog;
 
     const form = document.createElement("form");
     form.className = "stack";
@@ -94,8 +103,8 @@ class QuickCreate extends HTMLElement {
     document.body.appendChild(dialog);
 
     // Expose to the open() method
-    this.form = form;
-    this.errorEl = errorEl;
+    this.#form = form;
+    this.#errorEl = errorEl;
 
     // ── Wire events ─────────────────────────────────────────────────────────
     trigger.addEventListener("click", () => this.open());
@@ -111,7 +120,7 @@ class QuickCreate extends HTMLElement {
       submitBtn.disabled = true;
 
       const params = new URLSearchParams();
-      new FormData(form).forEach((v, k) => params.append(k, v as string));
+      new FormData(form).forEach((v, k) => params.append(k, /** @type {string} */ (v)));
 
       try {
         const res = await fetch(api, {
@@ -123,7 +132,7 @@ class QuickCreate extends HTMLElement {
           body: params.toString(),
         });
 
-        const json = await res.json() as { id?: string; name?: string; sku?: string; error?: string };
+        const json = /** @type {{ id?: string; name?: string; sku?: string; error?: string }} */ (await res.json());
 
         if (!res.ok) {
           errorEl.textContent = json.error ?? "Something went wrong.";
@@ -132,7 +141,7 @@ class QuickCreate extends HTMLElement {
         }
 
         // Inject new <option> into the target <select>
-        const select = document.getElementById(targetId) as HTMLSelectElement | null;
+        const select = /** @type {HTMLSelectElement | null} */ (document.getElementById(targetId));
         if (select && json.id && json.name) {
           const opt = document.createElement("option");
           opt.value = json.id;
@@ -154,7 +163,7 @@ class QuickCreate extends HTMLElement {
   }
 
   disconnectedCallback() {
-    this.dialog?.remove();
+    this.#dialog?.remove();
   }
 }
 

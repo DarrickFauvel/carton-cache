@@ -13,7 +13,7 @@ const components = [
 await Promise.all(
   components.map((name) =>
     esbuild.build({
-      entryPoints: [`src/components/${name}.ts`],
+      entryPoints: [`src/components/${name}.js`],
       bundle: true,
       outfile: `public/js/components/${name}.js`,
       format: "esm",

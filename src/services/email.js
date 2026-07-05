@@ -11,7 +11,11 @@ const transporter = nodemailer.createTransport({
 
 const from = process.env.SMTP_FROM ?? "Carton Cache <no-reply@cartoncache.com>";
 
-export async function sendPasswordReset(to: string, resetUrl: string) {
+/**
+ * @param {string} to
+ * @param {string} resetUrl
+ */
+export async function sendPasswordReset(to, resetUrl) {
   await transporter.sendMail({
     from,
     to,

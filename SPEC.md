@@ -196,7 +196,7 @@ Alert resets once stock rises above the threshold again.
 
 | Layer | Choice | Notes |
 |---|---|---|
-| Runtime | Node.js + TypeScript | Strict mode |
+| Runtime | Node.js + JavaScript | JSDoc type annotations, checked via `tsc --noEmit` (strict mode) |
 | HTTP server | Express 5 | Middleware routing |
 | Templating | Eta | Server-rendered HTML |
 | Reactivity | Datastar | Signals + SSE for live updates and form submissions |
@@ -219,23 +219,22 @@ browser
   │  Web Components: <barcode-scanner>, <stock-chart>, <push-subscribe>
   │  Service Worker (push notifications)
   ▼
-Express (TypeScript) — single process, VPS deployment
+Express (JavaScript + JSDoc) — single process, VPS deployment
   ├── routes/
-  │     ├── auth.ts              login, logout, session
-  │     ├── dashboard.ts         stock overview
-  │     ├── transactions.ts      receive, consume, transfer, adjust
-  │     ├── cartons.ts           carton type CRUD
-  │     ├── locations.ts         location CRUD
-  │     ├── alerts.ts            threshold management
-  │     ├── push.ts              Web Push subscription management
-  │     └── reports.ts           cost, savings, history, trends
+  │     ├── auth.js              login, logout, session
+  │     ├── dashboard.js         stock overview
+  │     ├── transactions.js      receive, consume, transfer, adjust
+  │     ├── cartons.js           carton type CRUD
+  │     ├── locations.js         location CRUD
+  │     ├── alerts.js            threshold management
+  │     ├── push.js              Web Push subscription management
+  │     └── reports.js           cost, savings, history, trends
   ├── services/
-  │     ├── inventory.ts         apply transactions, update lots atomically
-  │     ├── alerts.ts            threshold evaluation, email + push dispatch
-  │     └── reports.ts           aggregation queries
+  │     ├── inventory.js         apply transactions, update lots atomically
+  │     ├── alerts.js            threshold evaluation, email + push dispatch
+  │     └── reports.js           aggregation queries
   ├── db/
-  │     ├── client.ts            Turso libSQL client
-  │     ├── schema.ts            CREATE TABLE statements
+  │     ├── client.js            Turso libSQL client
   │     └── migrations/          versioned SQL files
   ├── views/                     Eta templates
   │     ├── layouts/
@@ -244,10 +243,10 @@ Express (TypeScript) — single process, VPS deployment
   ├── public/
   │     ├── sw.js                Service worker (push)
   │     └── components/          Compiled Web Component JS
-  └── components/                Web Component source (TypeScript)
-        ├── barcode-scanner.ts
-        ├── stock-chart.ts
-        └── push-subscribe.ts
+  └── components/                Web Component source (JavaScript + JSDoc)
+        ├── barcode-scanner.js
+        ├── stock-chart.js
+        └── push-subscribe.js
 ```
 
 ---
