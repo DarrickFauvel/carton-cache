@@ -8,6 +8,7 @@ const components = [
   "quick-create",
   "carton-scanner",
   "qr-modal",
+  "carton-suggest",
 ];
 
 await Promise.all(

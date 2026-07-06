@@ -2,6 +2,10 @@ import { Router } from "express";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { db } from "../db/client.js";
 import { ulid, now, str, defined } from "../lib/id.js";
+import * as cartonSuggest from "../services/carton-suggest.js";
+import { buildLabelCode } from "../lib/labels.js";
+
+/** @typedef {import("../types.js").CartonType} CartonType */
 
 const router = Router();
 
@@ -9,24 +13,36 @@ const FORM_SCRIPTS = ["barcode-scanner"];
 
 /** @param {Record<string, string | string[]>} body */
 function parseCartonBody(body) {
-  const name      = str(body.name);
-  const sku       = str(body.sku);
-  const barcode   = str(body.barcode);
-  const length_cm = str(body.length_cm);
-  const width_cm  = str(body.width_cm);
-  const height_cm = str(body.height_cm);
-  const unit_cost = str(body.unit_cost);
-  const notes     = str(body.notes);
+  const name        = str(body.name);
+  const sku         = str(body.sku);
+  const barcode     = str(body.barcode);
+  const length_cm   = str(body.length_cm);
+  const width_cm    = str(body.width_cm);
+  const height_cm   = str(body.height_cm);
+  const unit_cost   = str(body.unit_cost);
+  const notes       = str(body.notes);
+  const source_code = str(body.source_code);
+  const size_code   = str(body.size_code);
   return {
-    name:      name.trim(),
-    sku:       sku.trim()       || null,
-    barcode:   barcode.trim()   || null,
-    length_cm: length_cm ? parseFloat(length_cm) : null,
-    width_cm:  width_cm  ? parseFloat(width_cm)  : null,
-    height_cm: height_cm ? parseFloat(height_cm) : null,
-    unit_cost: unit_cost ? parseFloat(unit_cost) : null,
-    notes:     notes.trim()     || null,
+    name:        name.trim(),
+    sku:         sku.trim()       || null,
+    barcode:     barcode.trim()   || null,
+    length_cm:   length_cm ? parseFloat(length_cm) : null,
+    width_cm:    width_cm  ? parseFloat(width_cm)  : null,
+    height_cm:   height_cm ? parseFloat(height_cm) : null,
+    unit_cost:   unit_cost ? parseFloat(unit_cost) : null,
+    notes:       notes.trim()     || null,
+    source_code: source_code.trim() || null,
+    size_code:   size_code.trim()   || null,
   };
+}
+
+/**
+ * @param {Record<string, unknown>[]} rows
+ * @returns {(Record<string, unknown> & { label_code: string | null })[]}
+ */
+function withLabelCode(rows) {
+  return rows.map((row) => ({ ...row, label_code: buildLabelCode(/** @type {CartonType} */ (row)) }));
 }
 
 /**
@@ -51,11 +67,47 @@ router.get("/lookup", requireAuth, async (req, res) => {
   res.json(result.rows[0]);
 });
 
+router.get("/suggest", requireAuth, async (req, res) => {
+  const length = parseFloat(String(req.query.length_cm ?? ""));
+  const width = parseFloat(String(req.query.width_cm ?? ""));
+  const height = parseFloat(String(req.query.height_cm ?? ""));
+  const dunnage = req.query.dunnage_cm !== undefined ? parseFloat(String(req.query.dunnage_cm)) : 2.5;
+  const locationId = req.query.location_id ? String(req.query.location_id) : undefined;
+
+  if (![length, width, height].every((n) => Number.isFinite(n) && n > 0)) {
+    return res.status(400).json({ error: "length_cm, width_cm, and height_cm are required and must be positive numbers." });
+  }
+  if (!Number.isFinite(dunnage) || dunnage < 0) {
+    return res.status(400).json({ error: "dunnage_cm must be a non-negative number." });
+  }
+
+  const result = await cartonSuggest.suggest({
+    orgId: defined(req.session.orgId),
+    lengthCm: length,
+    widthCm: width,
+    heightCm: height,
+    dunnageCm: dunnage,
+    locationId,
+  });
+  res.json(result);
+});
+
+router.get("/:id/label", requireAuth, async (req, res) => {
+  const result = await db.execute({
+    sql: "SELECT * FROM carton_types WHERE id = ? AND org_id = ?",
+    args: [str(req.params.id), defined(req.session.orgId)],
+  });
+  const carton = /** @type {CartonType | undefined} */ (/** @type {unknown} */ (result.rows[0]));
+  const labelCode = carton ? buildLabelCode(carton) : null;
+  if (!carton || !labelCode) return res.redirect("/cartons");
+  res.render("pages/cartons/label", { labelCode, cartonName: carton.name });
+});
+
 router.get("/", requireAuth, async (req, res) => {
   const result = await db.execute({ sql: "SELECT * FROM carton_types WHERE org_id = ? ORDER BY name", args: [defined(req.session.orgId)] });
   res.render("pages/cartons/index", {
     title: "Carton Types",
-    cartons: result.rows,
+    cartons: withLabelCode(result.rows),
     saved: false,
   });
 });
@@ -86,11 +138,12 @@ router.post("/", requireRole("admin", "manager"), async (req, res) => {
   const id = ulid();
   try {
     await db.execute({
-      sql: `INSERT INTO carton_types (id, name, sku, barcode, length_cm, width_cm, height_cm, unit_cost, notes, org_id, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO carton_types (id, name, sku, barcode, length_cm, width_cm, height_cm, unit_cost, notes, source_code, size_code, org_id, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [id, fields.name, fields.sku, fields.barcode,
              fields.length_cm, fields.width_cm, fields.height_cm,
-             fields.unit_cost, fields.notes, defined(req.session.orgId), now()],
+             fields.unit_cost, fields.notes, fields.source_code, fields.size_code,
+             defined(req.session.orgId), now()],
     });
   } catch (err) {
     const error = constraintMessage(err) ?? "Could not save carton type. Please try again.";
@@ -136,11 +189,11 @@ router.post("/:id/edit", requireRole("admin", "manager"), async (req, res) => {
   }
   try {
     await db.execute({
-      sql: `UPDATE carton_types SET name=?, sku=?, barcode=?, length_cm=?, width_cm=?, height_cm=?, unit_cost=?, notes=?
+      sql: `UPDATE carton_types SET name=?, sku=?, barcode=?, length_cm=?, width_cm=?, height_cm=?, unit_cost=?, notes=?, source_code=?, size_code=?
             WHERE id=? AND org_id=?`,
       args: [fields.name, fields.sku, fields.barcode,
              fields.length_cm, fields.width_cm, fields.height_cm,
-             fields.unit_cost, fields.notes, id, orgId],
+             fields.unit_cost, fields.notes, fields.source_code, fields.size_code, id, orgId],
     });
   } catch (err) {
     const result = await db.execute({ sql: "SELECT * FROM carton_types WHERE id = ? AND org_id = ?", args: [id, orgId] });
@@ -168,7 +221,7 @@ router.post("/:id/delete", requireRole("admin", "manager"), async (req, res) => 
     const result = await db.execute({ sql: "SELECT * FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId] });
     return res.render("pages/cartons/index", {
       title: "Carton Types",
-      cartons: result.rows,
+      cartons: withLabelCode(result.rows),
       saved: false,
       deleteError: "Cannot delete a carton type that has transactions or stock on hand.",
     });

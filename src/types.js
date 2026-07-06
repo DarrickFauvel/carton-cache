@@ -40,6 +40,8 @@
  * @property {number | null} height_cm
  * @property {number | null} unit_cost
  * @property {string | null} notes
+ * @property {string | null} source_code
+ * @property {string | null} size_code
  * @property {number} created_at
  */
 
@@ -102,6 +104,38 @@
  * @property {string} p256dh
  * @property {string} auth
  * @property {number} created_at
+ */
+
+/**
+ * @typedef {object} CartonSuggestion
+ * @property {string} id
+ * @property {string} name
+ * @property {string | null} sku
+ * @property {number} length_cm
+ * @property {number} width_cm
+ * @property {number} height_cm
+ * @property {number} quantity
+ * @property {number} leftover_volume_cm3
+ */
+
+/**
+ * @typedef {object} RetailCartonSuggestion
+ * @property {string} id
+ * @property {string} store_name
+ * @property {string | null} city
+ * @property {string} name
+ * @property {string | null} sku
+ * @property {number} length_cm
+ * @property {number} width_cm
+ * @property {number} height_cm
+ * @property {number | null} cost
+ * @property {number} leftover_volume_cm3
+ */
+
+/**
+ * @typedef {object} SuggestCartonResult
+ * @property {CartonSuggestion[]} onSite
+ * @property {RetailCartonSuggestion[]} retail
  */
 
 /**

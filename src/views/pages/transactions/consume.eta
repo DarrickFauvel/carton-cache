@@ -5,6 +5,17 @@
 </div>
 
 <section class="form-card">
+  <details>
+    <summary>Not sure which carton? Suggest a size</summary>
+    <carton-suggest
+      endpoint="/cartons/suggest"
+      target="carton_type_id"
+      location-target="location_id">
+    </carton-suggest>
+  </details>
+</section>
+
+<section class="form-card">
   <form method="post" action="/transactions/consume" class="stack">
 
     <div class="form-group">

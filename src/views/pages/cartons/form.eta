@@ -38,6 +38,19 @@
       </div>
     </div>
 
+    <div class="input-row">
+      <div class="form-group">
+        <label for="source_code">Label source code <small>(optional)</small></label>
+        <input id="source_code" type="text" name="source_code"
+               value="<%= it.carton ? (it.carton.source_code || '') : '' %>" placeholder="ama, wal, non…" />
+      </div>
+      <div class="form-group">
+        <label for="size_code">Label size code <small>(optional)</small></label>
+        <input id="size_code" type="text" name="size_code"
+               value="<%= it.carton ? (it.carton.size_code || '') : '' %>" placeholder="20, sm, xyz…" />
+      </div>
+    </div>
+
     <div class="form-group">
       <label for="unit_cost">Unit cost <small>(optional)</small></label>
       <input id="unit_cost" type="number" name="unit_cost" inputmode="decimal" min="0" step="0.01"

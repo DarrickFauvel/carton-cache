@@ -3,8 +3,10 @@ import { requireAuth, requireRole } from "../middleware/auth.js";
 import { db } from "../db/client.js";
 import * as inventory from "../services/inventory.js";
 import { str, defined } from "../lib/id.js";
+import { buildLabelCode } from "../lib/labels.js";
 
 /** @typedef {import("../types.js").Condition} Condition */
+/** @typedef {import("../types.js").CartonType} CartonType */
 
 const router = Router();
 
@@ -17,6 +19,19 @@ router.get("/receive", requireAuth, async (req, res) => {
     db.execute({ sql: "SELECT id, name FROM locations WHERE active = 1 AND org_id = ? ORDER BY name", args: [orgId] }),
     db.execute({ sql: "SELECT id, name, sku, barcode, unit_cost FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId] }),
   ]);
+
+  let printLabelCarton = null;
+  if (req.query.printLabel) {
+    const result = await db.execute({
+      sql: "SELECT * FROM carton_types WHERE id = ? AND org_id = ?",
+      args: [String(req.query.printLabel), orgId],
+    });
+    const carton = /** @type {CartonType | undefined} */ (/** @type {unknown} */ (result.rows[0]));
+    if (carton) {
+      printLabelCarton = { id: carton.id, name: carton.name, labelCode: buildLabelCode(carton) };
+    }
+  }
+
   res.render("pages/transactions/receive", {
     title: "Receive Stock",
     locations: locations.rows,
@@ -24,6 +39,7 @@ router.get("/receive", requireAuth, async (req, res) => {
     canCreateLocation: userRole === "admin",
     canCreateCarton: userRole === "admin" || userRole === "manager",
     componentScripts: ["barcode-scanner", "quick-create", "carton-scanner"],
+    printLabelCarton,
   });
 });
 
@@ -39,7 +55,7 @@ router.post("/receive", requireAuth, async (req, res) => {
     userId: defined(req.session.userId),
     notes: str(notes) || undefined,
   });
-  res.redirect("/");
+  res.redirect(`/transactions/receive?printLabel=${encodeURIComponent(str(carton_type_id))}`);
 });
 
 // ── Consume ───────────────────────────────────────────────────────────────────
@@ -54,7 +70,7 @@ router.get("/consume", requireAuth, async (req, res) => {
     title: "Consume Stock",
     locations: locations.rows,
     cartons: cartons.rows,
-    componentScripts: ["barcode-scanner", "carton-scanner"],
+    componentScripts: ["barcode-scanner", "carton-scanner", "carton-suggest"],
   });
 });
 
