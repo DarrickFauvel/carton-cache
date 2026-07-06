@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title><%= it.labelCode %></title>
+  <style>
+    @page { size: 3.5in 1.125in; margin: 0.05in; }
+    body { margin: 0; display: flex; align-items: center; justify-content: center; height: 1.125in; font-family: monospace; }
+    .code { font-size: 28pt; font-weight: bold; }
+    .actions { position: fixed; bottom: 0.1in; }
+    @media print { .actions { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="code"><%= it.labelCode %></div>
+  <div class="actions">
+    <button type="button" onclick="window.print()">Print</button>
+    <a href="/cartons">Back</a>
+  </div>
+  <script>window.onload = () => window.print();</script>
+</body>
+</html>

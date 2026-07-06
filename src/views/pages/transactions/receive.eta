@@ -4,6 +4,20 @@
   <h1>Receive Stock</h1>
 </div>
 
+<% if (it.printLabelCarton) { %>
+  <% if (it.printLabelCarton.labelCode) { %>
+  <p class="alert alert--success" role="status">
+    Received <%= it.printLabelCarton.name %>.
+    <a href="/cartons/<%= it.printLabelCarton.id %>/label" target="_blank" class="btn btn--primary">Print label (<%= it.printLabelCarton.labelCode %>)</a>
+  </p>
+  <% } else { %>
+  <p class="alert alert--warning" role="status">
+    Received <%= it.printLabelCarton.name %>.
+    <a href="/cartons/<%= it.printLabelCarton.id %>/edit">Set a source &amp; size code</a> on this carton type to enable label printing.
+  </p>
+  <% } %>
+<% } %>
+
 <section class="form-card">
   <form method="post" action="/transactions/receive" class="stack">
 

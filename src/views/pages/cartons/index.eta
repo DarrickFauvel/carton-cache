@@ -31,6 +31,7 @@
         <th>Barcode</th>
         <th>Dimensions (cm)</th>
         <th>Unit cost</th>
+        <th>Label</th>
         <th></th>
       </tr>
     </thead>
@@ -46,9 +47,17 @@
           <% } else { %>—<% } %>
         </td>
         <td data-label="Unit cost"><%= c.unit_cost != null ? '$' + Number(c.unit_cost).toFixed(2) : '—' %></td>
+        <td data-label="Label">
+          <% if (c.label_code) { %>
+          <code><%= c.label_code %></code>
+          <% } else { %>—<% } %>
+        </td>
         <td class="table-cell--actions">
-          <% if (it.user && (it.user.role === 'admin' || it.user.role === 'manager')) { %>
           <div class="action-row">
+            <% if (c.label_code) { %>
+            <a href="/cartons/<%= c.id %>/label" target="_blank" class="btn btn-ghost" aria-label="Print label for <%= c.name %>">Print</a>
+            <% } %>
+            <% if (it.user && (it.user.role === 'admin' || it.user.role === 'manager')) { %>
             <a href="/cartons/<%= c.id %>/edit" class="btn btn-ghost">Edit</a>
             <form method="post" action="/cartons/<%= c.id %>/delete">
               <button type="submit" class="btn btn--danger"
@@ -56,8 +65,8 @@
                 Delete
               </button>
             </form>
+            <% } %>
           </div>
-          <% } %>
         </td>
       </tr>
       <% }) %>
