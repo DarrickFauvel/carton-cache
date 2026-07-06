@@ -8,6 +8,7 @@ declare module "express-session" {
     userLocationIds: string[];
     userAvatarColor: string;
     orgId: string;
+    orgName: string;
     orgPlan: "free" | "pro";
   }
 }

@@ -14,6 +14,12 @@
 <section class="form-card">
   <form method="post" action="/settings" class="stack">
     <div class="form-group">
+      <label for="org_name">Organization name</label>
+      <input id="org_name" type="text" name="org_name" autocomplete="organization" required
+             value="<%= it.orgName %>" />
+    </div>
+
+    <div class="form-group">
       <label for="default_tax_percent">Default tax % <small>(optional)</small></label>
       <input id="default_tax_percent" type="number" name="default_tax_percent" inputmode="decimal" min="0" step="0.01"
              value="<%= it.defaultTaxPercent != null ? it.defaultTaxPercent : '' %>" placeholder="e.g. 8.25" />

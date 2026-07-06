@@ -31,7 +31,12 @@
 </head>
 <body class="has-nav<% if (it.user) { %> has-app-nav<% } %>">
   <header class="site-header">
-    <a href="/" class="brand">Carton Cache</a>
+    <div class="brand-group">
+      <a href="/" class="brand">Carton Cache</a>
+      <% if (it.user && it.user.orgName) { %>
+      <span class="brand-org"><%= it.user.orgName %></span>
+      <% } %>
+    </div>
 
     <% if (it.user) { %>
     <nav class="site-nav">

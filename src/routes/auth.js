@@ -25,12 +25,12 @@ router.get("/register", (req, res) => {
 });
 
 router.post("/register", async (req, res) => {
-  const { name, email, password, confirm } = req.body;
+  const { name, org_name, email, password, confirm } = req.body;
 
   const renderErr = (/** @type {string} */ error) =>
     res.render("pages/register", { title: "Create account", error });
 
-  if (!name?.trim() || !email?.trim() || !password) {
+  if (!name?.trim() || !org_name?.trim() || !email?.trim() || !password) {
     return renderErr("All fields are required.");
   }
   if (password.length < 8) {
@@ -48,16 +48,15 @@ router.post("/register", async (req, res) => {
     return renderErr("An account with that email already exists.");
   }
 
-  const orgId   = ulid();
-  const userId  = ulid();
-  const hash    = await argon2.hash(password);
-  const ts      = now();
-  const orgName = `${name.trim()}'s workspace`;
+  const orgId  = ulid();
+  const userId = ulid();
+  const hash   = await argon2.hash(password);
+  const ts     = now();
 
   await db.batch([
     {
       sql: "INSERT INTO organizations (id, name, plan, created_at) VALUES (?, ?, 'free', ?)",
-      args: [orgId, orgName, ts],
+      args: [orgId, org_name.trim(), ts],
     },
     {
       sql: "INSERT INTO users (id, email, name, password_hash, role, location_ids, avatar_color, org_id, created_at) VALUES (?,?,?,?,?,?,?,?,?)",
@@ -71,6 +70,7 @@ router.post("/register", async (req, res) => {
   req.session.userLocationIds = [];
   req.session.userAvatarColor = "color-1";
   req.session.orgId           = orgId;
+  req.session.orgName         = org_name.trim();
   req.session.orgPlan         = "free";
 
   res.redirect("/");
@@ -87,11 +87,11 @@ router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   const result = await db.execute({
-    sql: "SELECT u.*, o.plan AS org_plan FROM users u JOIN organizations o ON o.id = u.org_id WHERE u.email = ?",
+    sql: "SELECT u.*, o.plan AS org_plan, o.name AS org_name FROM users u JOIN organizations o ON o.id = u.org_id WHERE u.email = ?",
     args: [email.toLowerCase().trim()],
   });
 
-  const user = /** @type {(User & { org_plan: Plan }) | undefined} */ (
+  const user = /** @type {(User & { org_plan: Plan, org_name: string }) | undefined} */ (
     /** @type {unknown} */ (result.rows[0])
   );
 
@@ -106,6 +106,7 @@ router.post("/login", async (req, res) => {
   req.session.userLocationIds = JSON.parse(/** @type {string} */ (/** @type {unknown} */ (user.location_ids)));
   req.session.userAvatarColor = user.avatar_color ?? "color-1";
   req.session.orgId           = /** @type {string} */ (/** @type {unknown} */ (user.org_id));
+  req.session.orgName         = user.org_name;
   req.session.orgPlan         = user.org_plan;
 
   const next = /** @type {string} */ (req.query.next) || "/";
