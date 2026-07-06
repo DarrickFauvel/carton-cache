@@ -32,10 +32,10 @@
     <tbody>
       <% it.locations.forEach(function(loc) { %>
       <tr>
-        <td><a href="/locations/<%= loc.id %>"><strong><%= loc.name %></strong></a></td>
-        <td><%= loc.address || '—' %></td>
-        <td><%= loc.active ? 'Active' : 'Inactive' %></td>
-        <td>
+        <td data-label="Name"><a href="/locations/<%= loc.id %>"><strong><%= loc.name %></strong></a></td>
+        <td data-label="Address"><%= loc.address || '—' %></td>
+        <td data-label="Status"><%= loc.active ? 'Active' : 'Inactive' %></td>
+        <td class="table-cell--actions">
           <% if (it.user && it.user.role === 'admin') { %>
           <a href="/locations/<%= loc.id %>/edit" class="btn btn-ghost">Edit</a>
           <% } %>

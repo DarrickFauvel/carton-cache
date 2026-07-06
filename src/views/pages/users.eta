@@ -19,9 +19,9 @@
     <tbody>
       <% it.users.forEach(function(u) { %>
       <tr>
-        <td><%= u.name %></td>
-        <td><%= u.email %></td>
-        <td><span class="condition--<%= u.role === 'admin' ? 'new' : u.role === 'manager' ? 'good' : u.role === 'staff' ? 'fair' : 'poor' %>"><%= u.role %></span></td>
+        <td data-label="Name"><%= u.name %></td>
+        <td data-label="Email"><%= u.email %></td>
+        <td data-label="Role"><span class="condition--<%= u.role === 'admin' ? 'new' : u.role === 'manager' ? 'good' : u.role === 'staff' ? 'fair' : 'poor' %>"><%= u.role %></span></td>
       </tr>
       <% }) %>
     </tbody>
