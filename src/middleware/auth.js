@@ -71,6 +71,7 @@ export function locals(req, res, next) {
         avatarColor: req.session.userAvatarColor ?? "color-1",
         initials: toInitials(req.session.userName ?? "?"),
         orgId: req.session.orgId,
+        orgName: req.session.orgName,
         orgPlan: req.session.orgPlan ?? "free",
       }
     : null;
