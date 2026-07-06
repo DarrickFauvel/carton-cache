@@ -8,6 +8,7 @@ const router = Router();
 /** @param {Record<string, string | string[]>} body */
 function parseRetailCartonBody(body) {
   const store_name = str(body.store_name);
+  const city       = str(body.city);
   const name       = str(body.name);
   const sku        = str(body.sku);
   const length_in  = str(body.length_in);
@@ -19,6 +20,7 @@ function parseRetailCartonBody(body) {
   const notes      = str(body.notes);
   return {
     store_name: store_name.trim(),
+    city:       city.trim() || null,
     name:       name.trim(),
     sku:        sku.trim()   || null,
     length_in:  length_in ? parseFloat(length_in) : null,
@@ -84,9 +86,9 @@ router.post("/", requireRole("admin", "manager"), async (req, res) => {
   try {
     await db.execute({
       sql: `INSERT INTO retail_carton_options
-              (id, store_name, name, sku, length_in, width_in, height_in, weight_lb, cost, tax_percent, notes, org_id, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [id, fields.store_name, fields.name, fields.sku,
+              (id, store_name, city, name, sku, length_in, width_in, height_in, weight_lb, cost, tax_percent, notes, org_id, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [id, fields.store_name, fields.city, fields.name, fields.sku,
              fields.length_in, fields.width_in, fields.height_in,
              fields.weight_lb, fields.cost, fields.tax_percent, fields.notes,
              defined(req.session.orgId), now()],
@@ -135,9 +137,9 @@ router.post("/:id/edit", requireRole("admin", "manager"), async (req, res) => {
   try {
     await db.execute({
       sql: `UPDATE retail_carton_options
-            SET store_name=?, name=?, sku=?, length_in=?, width_in=?, height_in=?, weight_lb=?, cost=?, tax_percent=?, notes=?
+            SET store_name=?, city=?, name=?, sku=?, length_in=?, width_in=?, height_in=?, weight_lb=?, cost=?, tax_percent=?, notes=?
             WHERE id=? AND org_id=?`,
-      args: [fields.store_name, fields.name, fields.sku,
+      args: [fields.store_name, fields.city, fields.name, fields.sku,
              fields.length_in, fields.width_in, fields.height_in,
              fields.weight_lb, fields.cost, fields.tax_percent, fields.notes, id, orgId],
     });

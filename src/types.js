@@ -47,6 +47,7 @@
  * @typedef {object} RetailCartonOption
  * @property {string} id
  * @property {string} store_name
+ * @property {string | null} city
  * @property {string} name
  * @property {string | null} sku
  * @property {number | null} length_in
