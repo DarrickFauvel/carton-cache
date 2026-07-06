@@ -31,6 +31,17 @@ Carton Cache tracks shipping carton inventory — both purchased (new) and salva
 
 ## Core Entities
 
+### Organization
+Every account belongs to an organization; every domain table is scoped by `org_id` and no query ever crosses organizations. Created automatically at signup along with the first `admin` user.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | text (ULID) | Primary key |
+| `name` | text | |
+| `plan` | text | `free` or `pro` — column exists for future billing, not currently enforced or charged |
+| `default_tax_percent` | real | Optional — prefills new RetailCartonOption entries |
+| `created_at` | integer | Unix timestamp |
+
 ### CartonType
 Defines a class of carton independent of location or condition.
 
@@ -46,6 +57,24 @@ Defines a class of carton independent of location or condition.
 | `unit_cost` | real | Purchase cost per new carton (your currency) |
 | `notes` | text | Optional |
 | `created_at` | integer | Unix timestamp |
+
+### RetailCartonOption
+A standalone reference catalog of cartons buyable from outside retailers (Walmart, Staples, etc.) when on-site stock runs short — **not** linked to `CartonType` or `InventoryLot` in any way; dimensions are in inches, not cm, since these are US retail products.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | text (ULID) | Primary key |
+| `store_name` | text | e.g. "Staples" |
+| `name` | text | |
+| `sku` | text | Optional |
+| `length_in`, `width_in`, `height_in` | real | Outer dimensions, inches |
+| `weight_lb` | real | Optional |
+| `cost` | real | Pre-tax store price |
+| `tax_percent` | real | Optional — defaults from `Organization.default_tax_percent` |
+| `notes` | text | Optional |
+| `created_at` | integer | Unix timestamp |
+
+Unique on `(org_id, store_name, sku)`.
 
 ### Condition
 Enum representing quality — applied to every stock lot and transaction:
@@ -141,7 +170,7 @@ Stores Web Push subscriptions for browser push notifications.
 - Low-stock indicator when any lot is at or below its alert threshold
 - Total estimated value of new stock on hand (quantity × unit_cost)
 - Estimated cumulative reuse savings (quantity of non-new cartons × unit_cost of that type)
-- Filter/search by name, SKU, or barcode
+- **Not yet implemented**: filter/search by name, SKU, or barcode
 
 ### 2. Receive Stock
 - Select location, carton type (or scan barcode), condition, quantity
@@ -173,22 +202,27 @@ Stores Web Push subscriptions for browser push notifications.
 - Matches scanned value against `CartonType.barcode`; auto-fills the form
 
 ### 7. Low-Stock Alerts
-Three delivery channels (user can configure which they want):
 
-- **In-app**: persistent banner on dashboard until stock is replenished
-- **Email**: sent via SMTP (Nodemailer) when threshold is first crossed
-- **Browser push**: Web Push notification to subscribed devices (service worker)
+Currently implemented: **in-app only** — the dashboard compares on-hand quantity per `(location, carton_type, condition)` against `AlertThreshold` inline and shows a low-stock indicator; there's no separate threshold-evaluation/dispatch service and no "reset" event, it just reflects current state on every dashboard load.
 
-Alert resets once stock rises above the threshold again.
+Email and browser push are scaffolded but **not wired to alert firing**:
+- Nodemailer is configured and used today only for password-reset emails (`src/services/email.js`); nothing sends a low-stock email.
+- `push_subscriptions` are stored via `/push/subscribe` and the service worker can display an incoming push, but no UI ever calls `/push/subscribe` (the endpoint is unreachable from any page) and no server code ever calls `webpush.sendNotification`.
+
+Turning either of these into a real delivery channel is future work, not done.
 
 ### 8. Cost & Reuse Reporting
 
 - **Stock value**: current new-stock quantity × unit cost per carton type
 - **Reuse savings**: total salvaged cartons received × unit cost = estimated savings vs. buying new
 - **Spend tracking**: total cost of all `receive new` transactions over a date range
-- **Consumption trends**: cartons used per week/month by type (bar chart via Web Component)
+- **Consumption trends**: cartons used per week, by type — rendered as a table (no chart/Web Component; see Architecture)
 - **Transaction history**: filterable log (date range, type, location, user, carton type)
 - **Stock snapshot**: exportable CSV of current on-hand levels
+
+### 9. Retail Carton Reference Catalog
+
+A separate, unrelated feature from on-site inventory (see `RetailCartonOption` above): a lookup table of cartons buyable from outside retailers when on-site stock runs short, at `/retail-cartons` (list/add/edit/delete, admin+manager). `/settings` (admin-only) configures an org-level `default_tax_percent` that prefills new entries so store prices (pre-tax) can show a tax-inclusive total; each entry can still override the rate individually.
 
 ---
 
@@ -199,8 +233,8 @@ Alert resets once stock rises above the threshold again.
 | Runtime | Node.js + JavaScript | JSDoc type annotations, checked via `tsc --noEmit` (strict mode) |
 | HTTP server | Express 5 | Middleware routing |
 | Templating | Eta | Server-rendered HTML |
-| Reactivity | Datastar | Signals + SSE for live updates and form submissions |
-| UI components | HTML Web Components | Barcode scanner, charts, push subscription |
+| Reactivity | Datastar | SSE helper (`src/lib/sse.js`) and CDN `<script>` tag are wired in, but currently unused — no route emits Datastar events and no view has `data-*` signals; all forms are plain HTML submits today |
+| UI components | HTML Web Components | Barcode/QR scanning, quick-create, avatar menu, theme toggle — see Architecture for the full list |
 | Styling | Modern CSS | Custom properties, container queries — no framework |
 | Database | Turso (libSQL) | SQLite-compatible; edge-ready for future scaling |
 | Auth | Session-based | express-session + argon2id |
@@ -214,25 +248,29 @@ Alert resets once stock rises above the threshold again.
 
 ```
 browser
-  │  Semantic HTML + Modern CSS
-  │  Datastar (data-* signals, SSE fragments)
-  │  Web Components: <barcode-scanner>, <stock-chart>, <push-subscribe>
-  │  Service Worker (push notifications)
+  │  Semantic HTML + Modern CSS, plain HTML form submits
+  │  Datastar CDN script present but inert — no data-* signals in use yet
+  │  Web Components (see below)
+  │  Service Worker: static-shell caching + offline fallback page;
+  │    can render a push notification if one ever arrives (nothing sends one yet)
   ▼
 Express (JavaScript + JSDoc) — single process, VPS deployment
   ├── routes/
-  │     ├── auth.js              login, logout, session
-  │     ├── dashboard.js         stock overview
-  │     ├── transactions.js      receive, consume, transfer, adjust
-  │     ├── cartons.js           carton type CRUD
+  │     ├── auth.js              register, login, logout, forgot/reset password
+  │     ├── dashboard.js         stock overview + inline low-stock indicator
+  │     ├── transactions.js      receive, consume, transfer, adjust, history
+  │     ├── cartons.js           carton type CRUD + barcode lookup
+  │     ├── retail-cartons.js    RetailCartonOption CRUD (unrelated reference catalog)
   │     ├── locations.js         location CRUD
-  │     ├── alerts.js            threshold management
-  │     ├── push.js              Web Push subscription management
-  │     └── reports.js           cost, savings, history, trends
+  │     ├── alerts.js            AlertThreshold CRUD (no dispatch — see Features #7)
+  │     ├── push.js              Web Push subscription storage (unused — see Features #7)
+  │     ├── reports.js           cost, savings, history, trends, CSV export
+  │     ├── users.js             user management (admin only)
+  │     ├── profile.js           own-account name/avatar/password
+  │     └── settings.js          org default tax % (admin only)
   ├── services/
-  │     ├── inventory.js         apply transactions, update lots atomically
-  │     ├── alerts.js            threshold evaluation, email + push dispatch
-  │     └── reports.js           aggregation queries
+  │     ├── inventory.js         apply transactions, update lots atomically — the only writer of inventory_lots/transactions
+  │     └── email.js             Nodemailer — password reset only, not alert dispatch
   ├── db/
   │     ├── client.js            Turso libSQL client
   │     └── migrations/          versioned SQL files
@@ -241,12 +279,16 @@ Express (JavaScript + JSDoc) — single process, VPS deployment
   │     ├── pages/
   │     └── partials/
   ├── public/
-  │     ├── sw.js                Service worker (push)
-  │     └── components/          Compiled Web Component JS
+  │     ├── sw.js                Service worker (static-shell cache + offline fallback; can display a push if one ever arrives)
+  │     └── js/components/       Bundled Web Component JS (esbuild output)
   └── components/                Web Component source (JavaScript + JSDoc)
-        ├── barcode-scanner.js
-        ├── stock-chart.js
-        └── push-subscribe.js
+        ├── barcode-scanner.js   camera capture + BarcodeDetector API (ZXing CDN fallback)
+        ├── carton-scanner.js    composes barcode-scanner + gs1.js to look up/quick-create a carton type
+        ├── gs1.js               GS1-128 barcode payload parsing
+        ├── quick-create.js      inline "create carton type" form used mid-scan
+        ├── qr-modal.js          QR code display modal
+        ├── avatar-menu.js       header user menu
+        └── theme-selector.js    light/dark theme toggle
 ```
 
 ---
@@ -255,19 +297,25 @@ Express (JavaScript + JSDoc) — single process, VPS deployment
 
 | Route | Description |
 |---|---|
-| `GET /` | Dashboard — stock levels, low-stock banners, savings summary |
+| `GET /` | Dashboard — stock levels, inline low-stock indicator, savings summary |
+| `GET /register` | Create org + first admin user |
+| `GET /login`, `GET /forgot-password`, `GET /reset-password/:token` | Auth flows |
 | `GET /locations/:id` | Single-location stock detail |
 | `GET /transactions/receive` | Receive stock form |
 | `GET /transactions/consume` | Consume stock form |
 | `GET /transactions/transfer` | Transfer form (source → destination) |
+| `GET /transactions/adjust` | Inventory adjustment form (admin/manager only) |
 | `GET /transactions` | Full transaction history |
 | `GET /cartons` | Carton type list |
 | `GET /cartons/new` | Add a carton type |
 | `GET /cartons/:id/edit` | Edit carton type (name, SKU, cost, barcode, dimensions) |
+| `GET /retail-cartons` | Retail carton reference catalog (unrelated to on-site inventory) |
 | `GET /alerts` | Alert threshold configuration |
 | `GET /reports` | Cost, savings, and consumption reporting |
-| `GET /settings` | User profile, notification preferences, push subscription |
-| `GET /admin/users` | User management (admin only) |
+| `GET /reports/snapshot.csv` | CSV export of current stock snapshot |
+| `GET /profile` | Own name, avatar color, password |
+| `GET /settings` | Org default sales tax % for retail carton options (admin only) |
+| `GET /users` | User management (admin only) |
 
 ---
 
@@ -279,7 +327,7 @@ Staff log activity on personal phones. Every form must work as a one-handed, thu
 - Barcode scan as the primary carton-selection method (not searching a dropdown)
 - Quantity input uses `inputmode="numeric"` — numeric keyboard on mobile
 - Forms are single-page, minimal scrolling — progressive disclosure for optional fields
-- Datastar SSE confirms submission in-place without a full page reload
+- **Not yet implemented**: in-place submission confirmation via Datastar SSE — forms currently do a full page reload on submit (see Tech Stack)
 
 ---
 
@@ -287,7 +335,7 @@ Staff log activity on personal phones. Every form must work as a one-handed, thu
 
 - **Audit trail**: transactions are append-only — no DELETE or UPDATE on the transactions table
 - **Consistency**: InventoryLot updates and transaction inserts happen in a single libSQL transaction
-- **Security**: parameterized queries throughout, CSRF tokens on all mutations, role middleware on every route
+- **Security**: parameterized queries throughout, role middleware on every route. `csrf-csrf` is a dependency but is not currently wired into `app.js` — no route actually issues or checks a CSRF token yet
 - **Accessibility**: semantic HTML, ARIA where Web Components require it, no color-only indicators
 - **Offline**: service worker caches the app shell; pending submits are queued and replayed on reconnect (stretch goal)
 
@@ -299,5 +347,5 @@ Staff log activity on personal phones. Every form must work as a one-handed, thu
 - Barcode label printing
 - Native mobile app
 - Webhook / Slack notifications
-- Weight / volume tracking beyond outer dimensions
-- Multi-tenant SaaS (single deployment, single org)
+- Weight / volume tracking beyond outer dimensions (except `RetailCartonOption.weight_lb`, tracked separately since retail listings include it)
+- Billing/plan enforcement — `Organization.plan` (`free`/`pro`) exists in the schema for future use but nothing reads or enforces it today
