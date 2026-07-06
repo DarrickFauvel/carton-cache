@@ -73,13 +73,13 @@ const typeLabel = {
     <tbody>
       <% it.transactions.forEach(function(t) { %>
       <tr>
-        <td><time datetime="<%= new Date(t.created_at).toISOString() %>"><%= new Date(t.created_at).toLocaleDateString() %></time></td>
-        <td><%= typeLabel[t.type] || t.type %></td>
-        <td><%= t.carton_name %></td>
-        <td><span class="condition--<%= t.condition %>"><%= t.condition %></span></td>
-        <td><%= t.quantity %></td>
-        <td><%= t.location_name %></td>
-        <td><%= t.user_name %></td>
+        <td data-label="Date"><time datetime="<%= new Date(t.created_at).toISOString() %>"><%= new Date(t.created_at).toLocaleDateString() %></time></td>
+        <td data-label="Type"><%= typeLabel[t.type] || t.type %></td>
+        <td data-label="Carton"><%= t.carton_name %></td>
+        <td data-label="Condition"><span class="condition--<%= t.condition %>"><%= t.condition %></span></td>
+        <td data-label="Qty"><%= t.quantity %></td>
+        <td data-label="Location"><%= t.location_name %></td>
+        <td data-label="By"><%= t.user_name %></td>
       </tr>
       <% }) %>
     </tbody>

@@ -37,16 +37,16 @@
     <tbody>
       <% it.cartons.forEach(function(c) { %>
       <tr>
-        <td><strong><%= c.name %></strong><% if (c.notes) { %><br><small><%= c.notes %></small><% } %></td>
-        <td><% if (c.sku) { %><code><%= c.sku %></code><% } else { %>—<% } %></td>
-        <td><% if (c.barcode) { %><code><%= c.barcode %></code><% } else { %>—<% } %></td>
-        <td>
+        <td data-label="Name"><strong><%= c.name %></strong><% if (c.notes) { %><br><small><%= c.notes %></small><% } %></td>
+        <td data-label="SKU"><% if (c.sku) { %><code><%= c.sku %></code><% } else { %>—<% } %></td>
+        <td data-label="Barcode"><% if (c.barcode) { %><code><%= c.barcode %></code><% } else { %>—<% } %></td>
+        <td data-label="Dimensions (cm)">
           <% if (c.length_cm && c.width_cm && c.height_cm) { %>
           <%= c.length_cm %> × <%= c.width_cm %> × <%= c.height_cm %>
           <% } else { %>—<% } %>
         </td>
-        <td><%= c.unit_cost != null ? '$' + Number(c.unit_cost).toFixed(2) : '—' %></td>
-        <td>
+        <td data-label="Unit cost"><%= c.unit_cost != null ? '$' + Number(c.unit_cost).toFixed(2) : '—' %></td>
+        <td class="table-cell--actions">
           <% if (it.user && (it.user.role === 'admin' || it.user.role === 'manager')) { %>
           <div class="action-row">
             <a href="/cartons/<%= c.id %>/edit" class="btn btn-ghost">Edit</a>

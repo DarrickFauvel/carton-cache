@@ -30,11 +30,11 @@
     <tbody>
       <% it.lots.forEach(function(lot) { %>
       <tr>
-        <td><strong><%= lot.carton_name %></strong></td>
-        <td><span class="condition--<%= lot.condition %>"><%= lot.condition %></span></td>
-        <td><strong><%= lot.quantity %></strong></td>
-        <td><%= lot.unit_cost != null ? '$' + Number(lot.unit_cost).toFixed(2) : '—' %></td>
-        <td><%= lot.unit_cost != null ? '$' + (lot.quantity * lot.unit_cost).toFixed(2) : '—' %></td>
+        <td data-label="Carton"><strong><%= lot.carton_name %></strong></td>
+        <td data-label="Condition"><span class="condition--<%= lot.condition %>"><%= lot.condition %></span></td>
+        <td data-label="Qty"><strong><%= lot.quantity %></strong></td>
+        <td data-label="Unit cost"><%= lot.unit_cost != null ? '$' + Number(lot.unit_cost).toFixed(2) : '—' %></td>
+        <td data-label="Value"><%= lot.unit_cost != null ? '$' + (lot.quantity * lot.unit_cost).toFixed(2) : '—' %></td>
       </tr>
       <% }) %>
     </tbody>

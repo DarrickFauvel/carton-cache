@@ -63,17 +63,17 @@
     <tbody>
       <% it.thresholds.forEach(function(t) { %>
       <tr>
-        <td><%= t.location_name %></td>
-        <td><%= t.carton_name %></td>
-        <td>
+        <td data-label="Location"><%= t.location_name %></td>
+        <td data-label="Carton"><%= t.carton_name %></td>
+        <td data-label="Condition">
           <% if (t.condition === 'any') { %>
           Any
           <% } else { %>
           <span class="condition--<%= t.condition %>"><%= t.condition %></span>
           <% } %>
         </td>
-        <td><%= t.min_quantity %></td>
-        <td>
+        <td data-label="Min qty"><%= t.min_quantity %></td>
+        <td class="table-cell--actions">
           <form method="post" action="/alerts/<%= t.id %>/delete">
             <button type="submit" class="btn btn--danger">Delete</button>
           </form>

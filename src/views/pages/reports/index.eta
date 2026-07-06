@@ -42,11 +42,11 @@ const totalSpend      = it.spend.reduce(function(sum, r) { return sum + (r.total
       <tbody>
         <% it.stockValue.forEach(function(r) { %>
         <tr>
-          <td><%= r.name %></td>
-          <td><span class="condition--<%= r.condition %>"><%= r.condition %></span></td>
-          <td><%= r.quantity %></td>
-          <td>$<%= Number(r.unit_cost).toFixed(2) %></td>
-          <td>$<%= Number(r.value).toFixed(2) %></td>
+          <td data-label="Carton"><%= r.name %></td>
+          <td data-label="Condition"><span class="condition--<%= r.condition %>"><%= r.condition %></span></td>
+          <td data-label="Qty"><%= r.quantity %></td>
+          <td data-label="Unit cost">$<%= Number(r.unit_cost).toFixed(2) %></td>
+          <td data-label="Value">$<%= Number(r.value).toFixed(2) %></td>
         </tr>
         <% }) %>
       </tbody>
@@ -66,10 +66,10 @@ const totalSpend      = it.spend.reduce(function(sum, r) { return sum + (r.total
       <tbody>
         <% it.reuseSavings.forEach(function(r) { %>
         <tr>
-          <td><%= r.name %></td>
-          <td><span class="condition--<%= r.condition %>"><%= r.condition %></span></td>
-          <td><%= r.qty %></td>
-          <td>$<%= Number(r.savings).toFixed(2) %></td>
+          <td data-label="Carton"><%= r.name %></td>
+          <td data-label="Condition"><span class="condition--<%= r.condition %>"><%= r.condition %></span></td>
+          <td data-label="Qty received"><%= r.qty %></td>
+          <td data-label="Savings">$<%= Number(r.savings).toFixed(2) %></td>
         </tr>
         <% }) %>
       </tbody>
@@ -89,9 +89,9 @@ const totalSpend      = it.spend.reduce(function(sum, r) { return sum + (r.total
       <tbody>
         <% it.spend.forEach(function(r) { %>
         <tr>
-          <td><%= r.name %></td>
-          <td><%= r.qty %></td>
-          <td>$<%= Number(r.total_cost).toFixed(2) %></td>
+          <td data-label="Carton"><%= r.name %></td>
+          <td data-label="Qty"><%= r.qty %></td>
+          <td data-label="Total cost">$<%= Number(r.total_cost).toFixed(2) %></td>
         </tr>
         <% }) %>
       </tbody>
