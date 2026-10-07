@@ -40,6 +40,9 @@ export function createApp() {
   });
   app.set("view engine", "eta");
   app.set("views", viewsDir);
+  // Railway terminates TLS at its edge proxy; without this, req.secure is false and
+  // express-session silently refuses to send the `secure` session cookie.
+  app.set("trust proxy", 1);
 
   // ── Middleware ───────────────────────────────────────────────────────────────
   app.use(express.urlencoded({ extended: true }));
