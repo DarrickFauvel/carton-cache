@@ -61,7 +61,8 @@
       <legend>Outer dimensions (<%= it.unit %>) <small>(optional)</small></legend>
       <input type="hidden" name="dim_unit" value="<%= it.unit %>" />
       <div class="dims-row">
-<% ['length', 'width', 'height'].forEach(function(dim) {
+<% var dims = ['length', 'width', 'height']; %>
+<% dims.forEach(function(dim) {
      var c = it.carton;
      // Re-rendered after a failed POST, carton holds the raw submitted values.
      var value = !c ? '' : c[dim] !== undefined ? c[dim] : c[dim + '_cm'] ? it.toUnit(Number(c[dim + '_cm'])) : ''; %>
