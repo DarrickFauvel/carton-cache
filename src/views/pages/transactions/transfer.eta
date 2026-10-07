@@ -4,6 +4,10 @@
   <h1>Transfer Stock</h1>
 </div>
 
+<% if (it.error) { %>
+<p class="alert alert--error" role="alert"><%= it.error %></p>
+<% } %>
+
 <section class="form-card">
   <form method="post" action="/transactions/transfer" class="stack">
 
@@ -12,7 +16,7 @@
       <select id="from_location_id" name="from_location_id" required>
         <option value="">Select location…</option>
         <% it.locations.forEach(function(loc) { %>
-        <option value="<%= loc.id %>"><%= loc.name %></option>
+        <option value="<%= loc.id %>" <%= it.values.from_location_id === loc.id ? 'selected' : '' %>><%= loc.name %></option>
         <% }) %>
       </select>
     </div>
@@ -22,7 +26,17 @@
       <select id="to_location_id" name="to_location_id" required>
         <option value="">Select location…</option>
         <% it.locations.forEach(function(loc) { %>
-        <option value="<%= loc.id %>"><%= loc.name %></option>
+        <option value="<%= loc.id %>" <%= it.values.to_location_id === loc.id ? 'selected' : '' %>><%= loc.name %></option>
+        <% }) %>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="condition">Condition</label>
+      <select id="condition" name="condition" required>
+        <% var conditions = [['new', 'New'], ['good', 'Good'], ['fair', 'Fair'], ['poor', 'Poor']]; %>
+        <% conditions.forEach(function(c) { %>
+        <option value="<%= c[0] %>" <%= it.values.condition === c[0] ? 'selected' : '' %>><%= c[1] %></option>
         <% }) %>
       </select>
     </div>
@@ -32,29 +46,21 @@
       <select id="carton_type_id" name="carton_type_id" required>
         <option value="">Select carton…</option>
         <% it.cartons.forEach(function(c) { %>
-        <option value="<%= c.id %>"><%= c.name %><% if (c.sku) { %> — <%= c.sku %><% } %></option>
+        <option value="<%= c.id %>" data-stock="<%= c.stock || '' %>" <%= it.values.carton_type_id === c.id ? 'selected' : '' %>><%= c.name %><% if (c.sku) { %> — <%= c.sku %><% } %></option>
         <% }) %>
       </select>
-    </div>
-
-    <div class="form-group">
-      <label for="condition">Condition</label>
-      <select id="condition" name="condition" required>
-        <option value="new">New</option>
-        <option value="good" selected>Good</option>
-        <option value="fair">Fair</option>
-        <option value="poor">Poor</option>
-      </select>
+      <location-stock-filter location="from_location_id" condition="condition" target="carton_type_id" quantity="quantity"></location-stock-filter>
     </div>
 
     <div class="form-group">
       <label for="quantity">Quantity</label>
-      <input id="quantity" type="number" name="quantity" inputmode="numeric" min="1" value="1" required />
+      <input id="quantity" type="number" name="quantity" inputmode="numeric" min="1" value="<%= it.values.quantity %>" required />
+      <small id="quantity_available" hidden></small>
     </div>
 
     <div class="form-group">
       <label for="notes">Notes <small>(optional)</small></label>
-      <textarea id="notes" name="notes" rows="2"></textarea>
+      <textarea id="notes" name="notes" rows="2"><%= it.values.notes || '' %></textarea>
     </div>
 
     <button type="submit" class="btn btn--primary">Transfer cartons</button>
