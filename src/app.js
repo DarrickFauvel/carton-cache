@@ -20,6 +20,7 @@ import usersRouter from "./routes/users.js";
 import profileRouter from "./routes/profile.js";
 import settingsRouter from "./routes/settings.js";
 import apiRouter from "./routes/api.js";
+import extensionRouter from "./routes/extension.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -80,6 +81,7 @@ export function createApp() {
   app.use("/", usersRouter);
   app.use("/", profileRouter);
   app.use("/", settingsRouter);
+  app.use("/extension", extensionRouter);
   app.use("/api", apiRouter);
 
   // ── 404 ──────────────────────────────────────────────────────────────────────
