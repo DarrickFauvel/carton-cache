@@ -10,7 +10,7 @@ import { defined } from "../lib/id.js";
  */
 export function requireAuth(req, res, next) {
   if (!req.session.userId) {
-    res.redirect(`/login?next=${encodeURIComponent(req.path)}`);
+    res.redirect(`/login?next=${encodeURIComponent(req.originalUrl)}`);
     return;
   }
   next();
@@ -27,7 +27,7 @@ export function requireRole(...roles) {
     /** @type {import("express").NextFunction} */ next
   ) => {
     if (!req.session.userId) {
-      res.redirect(`/login?next=${encodeURIComponent(req.path)}`);
+      res.redirect(`/login?next=${encodeURIComponent(req.originalUrl)}`);
       return;
     }
     if (!roles.includes(defined(req.session.userRole))) {

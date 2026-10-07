@@ -10,6 +10,19 @@ import { sendPasswordReset } from "../services/email.js";
 
 const router = Router();
 
+/**
+ * The post-login redirect target from `?next=` or the login form, limited to
+ * paths on this site so it can't be used as an open redirect.
+ * @param {unknown} value
+ * @returns {string | null}
+ */
+function safeNext(value) {
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) {
+    return null;
+  }
+  return value;
+}
+
 // ── Welcome / landing ─────────────────────────────────────────────────────────
 
 router.get("/", async (req, res, next) => {
@@ -80,7 +93,7 @@ router.post("/register", async (req, res) => {
 
 router.get("/login", (req, res) => {
   if (req.session.userId) { res.redirect("/"); return; }
-  res.render("pages/login", { title: "Sign in", error: null, notice: null });
+  res.render("pages/login", { title: "Sign in", error: null, notice: null, next: safeNext(req.query.next) });
 });
 
 router.post("/login", async (req, res) => {
@@ -96,7 +109,7 @@ router.post("/login", async (req, res) => {
   );
 
   if (!user || !(await argon2.verify(user.password_hash, password))) {
-    res.render("pages/login", { title: "Sign in", error: "Invalid email or password.", notice: null });
+    res.render("pages/login", { title: "Sign in", error: "Invalid email or password.", notice: null, next: safeNext(req.body.next) });
     return;
   }
 
@@ -109,8 +122,7 @@ router.post("/login", async (req, res) => {
   req.session.orgName         = user.org_name;
   req.session.orgPlan         = user.org_plan;
 
-  const next = /** @type {string} */ (req.query.next) || "/";
-  res.redirect(next);
+  res.redirect(safeNext(req.body.next) ?? "/");
 });
 
 // ── Forgot password ───────────────────────────────────────────────────────────
