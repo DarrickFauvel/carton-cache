@@ -1,0 +1,87 @@
+:root {
+  color-scheme: light dark;
+  --bg: #ffffff;
+  --fg: #1f2328;
+  --muted: #59636e;
+  --border: #d1d9e0;
+  --accent: #0969da;
+  --accent-fg: #ffffff;
+  --card: #f6f8fa;
+  --error: #d1242f;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1117;
+    --fg: #e6edf3;
+    --muted: #9198a1;
+    --border: #3d444d;
+    --accent: #4493f8;
+    --accent-fg: #0d1117;
+    --card: #151b23;
+    --error: #f85149;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 12px 16px;
+  background: var(--bg);
+  color: var(--fg);
+  font: 14px/1.45 system-ui, sans-serif;
+}
+
+h1 { font-size: 16px; margin: 0; }
+h2 { font-size: 13px; margin: 16px 0 6px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+header { margin-bottom: 12px; }
+section { display: grid; gap: 8px; }
+section[hidden] { display: none; }
+form { display: grid; gap: 8px; }
+
+label, legend { font-weight: 600; font-size: 13px; }
+fieldset { border: 0; padding: 0; margin: 0; }
+
+input, select, button {
+  font: inherit;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  min-width: 0;
+}
+
+button {
+  cursor: pointer;
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+button.secondary { background: var(--bg); color: var(--fg); border-color: var(--border); }
+button.link { background: none; border: 0; color: var(--accent); padding: 0; font-weight: 400; }
+
+.dims { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr auto; gap: 4px; align-items: center; margin-top: 4px; }
+.muted { color: var(--muted); margin: 0; }
+.error { color: var(--error); }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 8px;
+  align-items: center;
+}
+
+.card .name { font-weight: 600; }
+.card .meta { color: var(--muted); font-size: 12px; grid-column: 1; }
+.card .cut { font-weight: 600; font-size: 13px; grid-column: 1; }
+.card button { grid-row: 1 / span 4; grid-column: 2; }
+footer { margin-top: 24px; }

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Carton Cache</title>
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Carton Cache</h1>
+      <p id="who" class="muted" hidden></p>
+    </header>
+
+    <section id="setup" hidden>
+      <form id="setup-form">
+        <label for="base-url">Carton Cache URL</label>
+        <input id="base-url" type="url" placeholder="https://cartons.example.com" required />
+        <button type="submit">Save</button>
+      </form>
+      <p class="muted">Chrome will ask to allow access to this site.</p>
+    </section>
+
+    <section id="login" hidden>
+      <p>You're not logged in to Carton Cache.</p>
+      <button id="login-button" type="button">Log in to Carton Cache</button>
+      <p class="muted">After logging in, come back to this panel.</p>
+    </section>
+
+    <section id="main" hidden>
+      <form id="suggest-form">
+        <label for="location">Location</label>
+        <select id="location">
+          <option value="">All locations</option>
+        </select>
+
+        <fieldset>
+          <legend>Item size</legend>
+          <div class="dims">
+            <input id="length" type="number" inputmode="decimal" min="0" step="any" placeholder="L" aria-label="Length" required />
+            <span>×</span>
+            <input id="width" type="number" inputmode="decimal" min="0" step="any" placeholder="W" aria-label="Width" required />
+            <span>×</span>
+            <input id="height" type="number" inputmode="decimal" min="0" step="any" placeholder="H" aria-label="Height" required />
+            <select id="unit" aria-label="Unit">
+              <option value="in">in</option>
+              <option value="cm">cm</option>
+            </select>
+          </div>
+        </fieldset>
+
+        <label for="dunnage">Padding on each side (<span id="dunnage-unit">in</span>)</label>
+        <input id="dunnage" type="number" inputmode="decimal" min="0" step="any" value="1" />
+
+        <button type="submit">Find carton</button>
+      </form>
+
+      <p id="status" role="status" class="muted"></p>
+      <div id="results"></div>
+    </section>
+
+    <footer>
+      <button id="change-url" type="button" class="link" hidden>Change Carton Cache URL</button>
+    </footer>
+
+    <script type="module" src="dist/sidepanel.js"></script>
+  </body>
+</html>

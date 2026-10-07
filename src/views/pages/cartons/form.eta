@@ -79,6 +79,15 @@
     </fieldset>
 
     <div class="form-group">
+      <label>
+        <input type="checkbox" name="resizable" value="1"
+               <%= it.carton && Number(it.carton.resizable) === 1 ? 'checked' : '' %> />
+        Height can be cut down
+      </label>
+      <small>Carton suggestions will say how far to cut this carton down to fit the item.</small>
+    </div>
+
+    <div class="form-group">
       <label for="notes">Notes <small>(optional)</small></label>
       <textarea id="notes" name="notes" rows="2"><%= it.carton ? (it.carton.notes || '') : '' %></textarea>
     </div>
