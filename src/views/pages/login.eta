@@ -17,6 +17,9 @@
   <% } %>
 
   <form method="post" action="/login" class="stack">
+    <% if (it.next) { %>
+    <input type="hidden" name="next" value="<%= it.next %>" />
+    <% } %>
     <div class="form-group">
       <label for="email">Email</label>
       <input id="email" type="email" name="email" autocomplete="email"
