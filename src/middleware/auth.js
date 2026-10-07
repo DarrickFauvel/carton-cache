@@ -1,4 +1,5 @@
 import { defined } from "../lib/id.js";
+import { parseUnit, fromCm } from "../lib/units.js";
 
 /** @typedef {import("../types.js").Role} Role */
 
@@ -99,6 +100,10 @@ export function toInitials(name) {
  */
 export function locals(req, res, next) {
   res.locals.path = req.path;
+  // Sessions from before the unit setting existed have no orgUnit.
+  const unit = parseUnit(req.session.orgUnit);
+  res.locals.unit = unit;
+  res.locals.toUnit = (/** @type {number} */ cm) => fromCm(cm, unit);
   res.locals.user = req.session.userId
     ? {
         id: req.session.userId,

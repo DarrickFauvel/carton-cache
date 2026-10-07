@@ -29,7 +29,7 @@
         <th>Name</th>
         <th>SKU</th>
         <th>Barcode</th>
-        <th>Dimensions (cm)</th>
+        <th>Dimensions (<%= it.unit %>)</th>
         <th>Unit cost</th>
         <th>Label</th>
         <th></th>
@@ -41,9 +41,9 @@
         <td data-label="Name"><strong><%= c.name %></strong><% if (c.notes) { %><br><small><%= c.notes %></small><% } %></td>
         <td data-label="SKU"><% if (c.sku) { %><code><%= c.sku %></code><% } else { %>—<% } %></td>
         <td data-label="Barcode"><% if (c.barcode) { %><code><%= c.barcode %></code><% } else { %>—<% } %></td>
-        <td data-label="Dimensions (cm)">
+        <td data-label="Dimensions (<%= it.unit %>)">
           <% if (c.length_cm && c.width_cm && c.height_cm) { %>
-          <%= c.length_cm %> × <%= c.width_cm %> × <%= c.height_cm %>
+          <%= it.toUnit(Number(c.length_cm)) %> × <%= it.toUnit(Number(c.width_cm)) %> × <%= it.toUnit(Number(c.height_cm)) %>
           <% } else { %>—<% } %>
         </td>
         <td data-label="Unit cost"><%= c.unit_cost != null ? '$' + Number(c.unit_cost).toFixed(2) : '—' %></td>

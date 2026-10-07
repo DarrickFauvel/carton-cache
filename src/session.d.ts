@@ -10,5 +10,6 @@ declare module "express-session" {
     orgId: string;
     orgName: string;
     orgPlan: "free" | "pro";
+    orgUnit: "in" | "cm";
   }
 }

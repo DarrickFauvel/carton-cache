@@ -4,6 +4,7 @@ import { db } from "../db/client.js";
 import { ulid, now, str, defined } from "../lib/id.js";
 import * as cartonSuggest from "../services/carton-suggest.js";
 import { buildLabelCode } from "../lib/labels.js";
+import { parseUnit, toCm } from "../lib/units.js";
 
 /** @typedef {import("../types.js").CartonType} CartonType */
 
@@ -11,14 +12,19 @@ const router = Router();
 
 const FORM_SCRIPTS = ["barcode-scanner"];
 
-/** @param {Record<string, string | string[]>} body */
+/**
+ * Dimensions arrive as `length`/`width`/`height` in the form's `dim_unit`
+ * (the org's display unit when the form was rendered) and are stored in cm.
+ * @param {Record<string, string | string[]>} body
+ */
 function parseCartonBody(body) {
   const name        = str(body.name);
   const sku         = str(body.sku);
   const barcode     = str(body.barcode);
-  const length_cm   = str(body.length_cm);
-  const width_cm    = str(body.width_cm);
-  const height_cm   = str(body.height_cm);
+  const unit        = parseUnit(str(body.dim_unit));
+  const length      = str(body.length);
+  const width       = str(body.width);
+  const height      = str(body.height);
   const unit_cost   = str(body.unit_cost);
   const notes       = str(body.notes);
   const source_code = str(body.source_code);
@@ -28,9 +34,9 @@ function parseCartonBody(body) {
     name:        name.trim(),
     sku:         sku.trim()       || null,
     barcode:     barcode.trim()   || null,
-    length_cm:   length_cm ? parseFloat(length_cm) : null,
-    width_cm:    width_cm  ? parseFloat(width_cm)  : null,
-    height_cm:   height_cm ? parseFloat(height_cm) : null,
+    length_cm:   length ? toCm(parseFloat(length), unit) : null,
+    width_cm:    width  ? toCm(parseFloat(width), unit)  : null,
+    height_cm:   height ? toCm(parseFloat(height), unit) : null,
     unit_cost:   unit_cost ? parseFloat(unit_cost) : null,
     notes:       notes.trim()     || null,
     source_code: source_code.trim() || null,

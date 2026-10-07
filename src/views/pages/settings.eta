@@ -26,6 +26,15 @@
       <small>Used to prefill the tax rate on new retail carton options. Each entry can still override it.</small>
     </div>
 
+    <div class="form-group">
+      <label for="measurement_unit">Measurement units</label>
+      <select id="measurement_unit" name="measurement_unit">
+        <option value="in" <%= it.measurementUnit === 'in' ? 'selected' : '' %>>Imperial (inches)</option>
+        <option value="cm" <%= it.measurementUnit === 'cm' ? 'selected' : '' %>>Metric (centimeters)</option>
+      </select>
+      <small>Used when entering and showing carton dimensions.</small>
+    </div>
+
     <button type="submit" class="btn btn--primary">Save changes</button>
   </form>
 </section>
