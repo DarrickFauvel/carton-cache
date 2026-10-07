@@ -10,7 +10,8 @@
     <carton-suggest
       endpoint="/cartons/suggest"
       target="carton_type_id"
-      location-target="location_id">
+      location-target="location_id"
+      unit="<%= it.unit %>">
     </carton-suggest>
   </details>
 </section>

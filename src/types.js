@@ -5,6 +5,7 @@
  * @typedef {"new"|"good"|"fair"|"poor"} Condition
  * @typedef {"receive"|"consume"|"transfer_out"|"transfer_in"|"adjustment"} TransactionType
  * @typedef {"free"|"pro"} Plan
+ * @typedef {"in"|"cm"} MeasurementUnit
  */
 
 /**
@@ -146,6 +147,7 @@
  * @property {string} name
  * @property {Plan} plan
  * @property {number | null} default_tax_percent
+ * @property {MeasurementUnit} measurement_unit
  * @property {number} created_at
  */
 

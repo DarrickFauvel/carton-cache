@@ -2,11 +2,14 @@
  * <carton-suggest
  *   endpoint="/cartons/suggest"
  *   target="carton_type_id"
- *   location-target="location_id">
+ *   location-target="location_id"
+ *   unit="in">
  * </carton-suggest>
  *
  * Renders its own L/W/H + unit + dunnage inputs (the host page has no such
  * fields), calls [endpoint] on "Find carton", and shows results:
+ *   - [unit] ("in" | "cm", default "in") preselects the unit dropdown and is
+ *     the unit results are shown in;
  *   - on-site matches are clickable buttons that select the matching
  *     <option> in the [target] select (same fill+dispatch pattern as
  *     carton-scanner.js);
@@ -14,15 +17,17 @@
  *     informational rows, not clickable — there's no carton_type_id to fill.
  */
 
-import { inToCm } from "../lib/units.js";
+import { parseUnit, toCm, fromCm } from "../lib/units.js";
 
 /**
  * @typedef {import("../types.js").CartonSuggestion} CartonSuggestion
  * @typedef {import("../types.js").RetailCartonSuggestion} RetailCartonSuggestion
  * @typedef {import("../types.js").SuggestCartonResult} SuggestCartonResult
+ * @typedef {import("../types.js").MeasurementUnit} MeasurementUnit
  */
 
-const DEFAULT_DUNNAGE_CM = 2.5;
+/** @type {Record<MeasurementUnit, number>} */
+const DEFAULT_DUNNAGE = { in: 1, cm: 2.5 };
 
 class CartonSuggest extends HTMLElement {
   /** @type {HTMLDivElement | null} */
@@ -34,8 +39,12 @@ class CartonSuggest extends HTMLElement {
   /** @type {HTMLInputElement | null} */
   #dunnageEl = null;
 
+  /** @type {MeasurementUnit} */
+  #defaultUnit = "in";
+
   connectedCallback() {
-    const defaultDunnage = parseFloat(this.getAttribute("default-dunnage") ?? "") || DEFAULT_DUNNAGE_CM;
+    this.#defaultUnit = parseUnit(this.getAttribute("unit"));
+    const defaultDunnage = parseFloat(this.getAttribute("default-dunnage") ?? "") || DEFAULT_DUNNAGE[this.#defaultUnit];
 
     this.innerHTML = `
       <div class="stack">
@@ -55,8 +64,8 @@ class CartonSuggest extends HTMLElement {
           <div class="form-group">
             <label>Unit</label>
             <select data-field="unit">
-              <option value="cm">cm</option>
-              <option value="in">in</option>
+              <option value="in"${this.#defaultUnit === "in" ? " selected" : ""}>in</option>
+              <option value="cm"${this.#defaultUnit === "cm" ? " selected" : ""}>cm</option>
             </select>
           </div>
         </div>
@@ -85,7 +94,7 @@ class CartonSuggest extends HTMLElement {
     const widthRaw = this.#fieldValue("width");
     const heightRaw = this.#fieldValue("height");
     const dunnageRaw = this.#dunnageEl?.value ?? "";
-    const unit = this.#unitEl?.value === "in" ? "in" : "cm";
+    const unit = parseUnit(this.#unitEl?.value);
 
     const values = [lengthRaw, widthRaw, heightRaw, dunnageRaw].map((v) => parseFloat(v));
     if (values.slice(0, 3).some((n) => !Number.isFinite(n) || n <= 0)) {
@@ -98,7 +107,6 @@ class CartonSuggest extends HTMLElement {
     }
 
     const [length, width, height, dunnage] = values;
-    const toCm = unit === "in" ? inToCm : (/** @type {number} */ n) => n;
 
     const endpoint = this.getAttribute("endpoint") ?? "/cartons/suggest";
     const locationTargetId = this.getAttribute("location-target");
@@ -107,10 +115,10 @@ class CartonSuggest extends HTMLElement {
       : "";
 
     const params = new URLSearchParams({
-      length_cm: String(toCm(length)),
-      width_cm: String(toCm(width)),
-      height_cm: String(toCm(height)),
-      dunnage_cm: String(toCm(dunnage)),
+      length_cm: String(toCm(length, unit)),
+      width_cm: String(toCm(width, unit)),
+      height_cm: String(toCm(height, unit)),
+      dunnage_cm: String(toCm(dunnage, unit)),
     });
     if (locationId) params.set("location_id", locationId);
 
@@ -121,7 +129,7 @@ class CartonSuggest extends HTMLElement {
         return;
       }
       const result = /** @type {SuggestCartonResult} */ (await res.json());
-      this.#renderResults(result);
+      this.#renderResults(result, unit);
     } catch {
       this.#setStatus("Network error. Please try again.", true);
     }
@@ -132,8 +140,11 @@ class CartonSuggest extends HTMLElement {
     return /** @type {HTMLInputElement | null} */ (this.querySelector(`[data-field="${field}"]`))?.value ?? "";
   }
 
-  /** @param {SuggestCartonResult} result */
-  #renderResults(result) {
+  /**
+   * @param {SuggestCartonResult} result
+   * @param {MeasurementUnit} unit
+   */
+  #renderResults(result, unit) {
     if (!this.#resultsEl) return;
     this.#resultsEl.innerHTML = "";
 
@@ -149,8 +160,8 @@ class CartonSuggest extends HTMLElement {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "btn btn-ghost";
-        const cut = carton.resize_height_cm != null ? ` · cut height to ${carton.resize_height_cm.toFixed(1)} cm` : "";
-        btn.textContent = `${carton.name}${carton.sku ? ` — ${carton.sku}` : ""} · ${this.#formatDims(carton)}${cut} · ${carton.quantity} in stock`;
+        const cut = carton.resize_height_cm != null ? ` · cut height to ${fromCm(carton.resize_height_cm, unit)} ${unit}` : "";
+        btn.textContent = `${carton.name}${carton.sku ? ` — ${carton.sku}` : ""} · ${this.#formatDims(carton, unit)}${cut} · ${carton.quantity} in stock`;
         btn.addEventListener("click", () => this.#selectCarton(carton));
         li.appendChild(btn);
         list.appendChild(li);
@@ -168,7 +179,7 @@ class CartonSuggest extends HTMLElement {
         const li = document.createElement("li");
         const parts = [
           `${option.name}${option.sku ? ` — ${option.sku}` : ""}`,
-          this.#formatDims(option),
+          this.#formatDims(option, unit),
           `${option.store_name}${option.city ? ` (${option.city})` : ""}`,
         ];
         if (option.cost != null) parts.push(`$${option.cost.toFixed(2)}`);
@@ -179,9 +190,13 @@ class CartonSuggest extends HTMLElement {
     }
   }
 
-  /** @param {{ length_cm: number; width_cm: number; height_cm: number }} carton */
-  #formatDims(carton) {
-    return `${carton.length_cm.toFixed(1)}×${carton.width_cm.toFixed(1)}×${carton.height_cm.toFixed(1)} cm`;
+  /**
+   * @param {{ length_cm: number; width_cm: number; height_cm: number }} carton
+   * @param {MeasurementUnit} unit
+   */
+  #formatDims(carton, unit) {
+    const dims = [carton.length_cm, carton.width_cm, carton.height_cm].map((cm) => fromCm(cm, unit).toFixed(1));
+    return `${dims.join("×")} ${unit}`;
   }
 
   /** @param {CartonSuggestion} carton */

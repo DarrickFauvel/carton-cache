@@ -77,19 +77,20 @@
               <input name="unit_cost" type="number" inputmode="decimal" min="0" step="0.01" />
             </div>
             <fieldset class="form-group">
-              <legend>Dimensions (cm) <small>(optional)</small></legend>
+              <legend>Dimensions (<%= it.unit %>) <small>(optional)</small></legend>
+              <input type="hidden" name="dim_unit" value="<%= it.unit %>" />
               <div class="dims-row">
                 <div class="form-group">
                   <label>L</label>
-                  <input name="length_cm" type="number" inputmode="decimal" min="0" step="0.1" placeholder="—" />
+                  <input name="length" type="number" inputmode="decimal" min="0" step="any" placeholder="—" />
                 </div>
                 <div class="form-group">
                   <label>W</label>
-                  <input name="width_cm" type="number" inputmode="decimal" min="0" step="0.1" placeholder="—" />
+                  <input name="width" type="number" inputmode="decimal" min="0" step="any" placeholder="—" />
                 </div>
                 <div class="form-group">
                   <label>H</label>
-                  <input name="height_cm" type="number" inputmode="decimal" min="0" step="0.1" placeholder="—" />
+                  <input name="height" type="number" inputmode="decimal" min="0" step="any" placeholder="—" />
                 </div>
               </div>
             </fieldset>

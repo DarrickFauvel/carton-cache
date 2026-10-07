@@ -3,6 +3,7 @@ import argon2 from "argon2";
 import { createHash, randomBytes } from "crypto";
 import { db } from "../db/client.js";
 import { ulid, now } from "../lib/id.js";
+import { parseUnit } from "../lib/units.js";
 import { sendPasswordReset } from "../services/email.js";
 
 /** @typedef {import("../types.js").User} User */
@@ -85,6 +86,7 @@ router.post("/register", async (req, res) => {
   req.session.orgId           = orgId;
   req.session.orgName         = org_name.trim();
   req.session.orgPlan         = "free";
+  req.session.orgUnit         = "in";
 
   res.redirect("/");
 });
@@ -100,11 +102,11 @@ router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   const result = await db.execute({
-    sql: "SELECT u.*, o.plan AS org_plan, o.name AS org_name FROM users u JOIN organizations o ON o.id = u.org_id WHERE u.email = ?",
+    sql: "SELECT u.*, o.plan AS org_plan, o.name AS org_name, o.measurement_unit AS org_unit FROM users u JOIN organizations o ON o.id = u.org_id WHERE u.email = ?",
     args: [email.toLowerCase().trim()],
   });
 
-  const user = /** @type {(User & { org_plan: Plan, org_name: string }) | undefined} */ (
+  const user = /** @type {(User & { org_plan: Plan, org_name: string, org_unit: string }) | undefined} */ (
     /** @type {unknown} */ (result.rows[0])
   );
 
@@ -121,6 +123,7 @@ router.post("/login", async (req, res) => {
   req.session.orgId           = /** @type {string} */ (/** @type {unknown} */ (user.org_id));
   req.session.orgName         = user.org_name;
   req.session.orgPlan         = user.org_plan;
+  req.session.orgUnit         = parseUnit(user.org_unit);
 
   res.redirect(safeNext(req.body.next) ?? "/");
 });
