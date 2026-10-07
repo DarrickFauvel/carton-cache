@@ -1,0 +1,30 @@
+<% layout('/layouts/base') %>
+
+<div class="page-header">
+  <h1>Chrome extension</h1>
+</div>
+
+<section class="form-card stack">
+  <p>
+    The Carton Cache extension adds a side panel to Chrome for finding the right carton
+    from your inventory while you list and ship, without leaving the page you're on.
+  </p>
+
+  <a href="/extension/download" class="btn btn--primary" download>Download extension (v<%= it.version %>)</a>
+
+  <h2>Install</h2>
+  <ol class="stack">
+    <li>Unzip the downloaded file. Keep the <code>carton-cache-extension</code> folder somewhere permanent, since Chrome loads the extension from it.</li>
+    <li>Open <code>chrome://extensions</code> in Chrome.</li>
+    <li>Turn on <strong>Developer mode</strong> (top right).</li>
+    <li>Click <strong>Load unpacked</strong> and select the <code>carton-cache-extension</code> folder.</li>
+    <li>Click the Carton Cache icon in the toolbar to open the side panel, enter <code><%= it.origin %></code> as the Carton Cache URL, and log in when asked.</li>
+  </ol>
+
+  <h2>Update</h2>
+  <p>
+    The extension doesn't update itself. To update, download it again, replace the contents of the
+    <code>carton-cache-extension</code> folder, and click the reload icon on the extension's card in
+    <code>chrome://extensions</code>.
+  </p>
+</section>
