@@ -42,6 +42,43 @@ export function requireRole(...roles) {
 }
 
 /**
+ * JSON counterpart of requireAuth for /api routes: responds 401 instead of
+ * redirecting, so API clients (the browser extension) get a parseable error.
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @param {import("express").NextFunction} next
+ */
+export function requireApiAuth(req, res, next) {
+  if (!req.session.userId) {
+    res.status(401).json({ error: "Not logged in" });
+    return;
+  }
+  next();
+}
+
+/**
+ * JSON counterpart of requireRole for /api routes.
+ * @param {...Role} roles
+ */
+export function requireApiRole(...roles) {
+  return (
+    /** @type {import("express").Request} */ req,
+    /** @type {import("express").Response} */ res,
+    /** @type {import("express").NextFunction} */ next
+  ) => {
+    if (!req.session.userId) {
+      res.status(401).json({ error: "Not logged in" });
+      return;
+    }
+    if (!roles.includes(defined(req.session.userRole))) {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+    next();
+  };
+}
+
+/**
  * Derive two-letter initials from a display name.
  * @param {string} name
  * @returns {string}

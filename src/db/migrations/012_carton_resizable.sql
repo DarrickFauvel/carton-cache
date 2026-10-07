@@ -1,0 +1,1 @@
+ALTER TABLE carton_types ADD COLUMN resizable INTEGER NOT NULL DEFAULT 0;

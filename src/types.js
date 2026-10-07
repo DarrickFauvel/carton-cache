@@ -42,6 +42,7 @@
  * @property {string | null} notes
  * @property {string | null} source_code
  * @property {string | null} size_code
+ * @property {1 | 0} resizable height can be cut down to fit the item
  * @property {number} created_at
  */
 
@@ -115,7 +116,8 @@
  * @property {number} width_cm
  * @property {number} height_cm
  * @property {number} quantity
- * @property {number} leftover_volume_cm3
+ * @property {number} leftover_volume_cm3 after cutting down, if resize_height_cm is set
+ * @property {number | null} resize_height_cm cut the carton down to this height; null = use as-is
  */
 
 /**

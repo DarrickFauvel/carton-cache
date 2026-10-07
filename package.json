@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node --watch src/index.js",
     "build": "node esbuild.config.js",
+    "build:extension": "node extension/build.js",
     "start": "node src/db/migrate.js && node src/index.js",
     "migrate": "node src/db/migrate.js",
     "generate-vapid": "node src/scripts/generate-vapid.js",
@@ -25,6 +26,7 @@
     "web-push": "^3.6.7"
   },
   "devDependencies": {
+    "@types/chrome": "^0.3.4",
     "@types/cookie-parser": "^1.4.8",
     "@types/express": "^5.0.1",
     "@types/express-session": "^1.18.1",

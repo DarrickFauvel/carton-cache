@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run dev` — start the server with `node --watch` (auto-restarts on file change). No build step; `src/**/*.js` runs directly.
 - `npm run typecheck` — type-check the whole `src/` tree via `tsc` (see "Types" below). This is the only "compile" step in this project; it emits nothing (`noEmit: true`), it only reports errors.
 - `npm run build` — bundles the browser Web Components (`src/components/*.js`) into `public/js/components/*.js` via esbuild. Run this after changing anything in `src/components/`; the server does not do this automatically.
+- `npm run build:extension` — bundles the Chrome extension's scripts (`extension/src/*.js`) into `extension/dist/` (gitignored). Load it unpacked from `extension/` in `chrome://extensions`.
 - `npm run migrate` — applies any unapplied files in `src/db/migrations/` to the Turso DB pointed at by `.env`. Safe to re-run: already-applied `ALTER TABLE ADD COLUMN` statements are caught and skipped (see `src/db/migrate.js`), though this only handles the "duplicate column name" case, not other partial-migration failures.
 - `npm start` — runs `migrate` then starts the server; this is the production entrypoint.
 - `npm run generate-vapid` — prints a new VAPID keypair for Web Push, to be pasted into `.env`.
@@ -40,6 +41,8 @@ Source is plain JavaScript (`"type": "module"`, no `.ts` files). Type-checking i
 **Views**: Eta templates under `src/views/`, one subdirectory per resource under `src/views/pages/`, plus `src/views/layouts/base.eta`. Routes pass data to `res.render()`; there's no client-side templating.
 
 **Web Components**: `src/components/*.js` are plain custom elements (no framework), bundled independently by `esbuild.config.js` into `public/js/components/`. A page opts into one via `componentScripts: [...]` in the data passed to `res.render()` (see `base.eta` for how that array becomes `<script>` tags). `carton-scanner` composes `barcode-scanner` (camera + `BarcodeDetector` API, with a ZXing CDN fallback) and `gs1.js` (GS1-128 barcode payload parsing) to look up or quick-create a carton type from a scan.
+
+**JSON API + Chrome extension**: `src/routes/api.js` (mounted at `/api`) is a small JSON-only API used by the Chrome extension in `extension/` (a side panel for picking a carton while listing/shipping on eBay). It uses the same session cookie as the web app, but guards routes with `requireApiAuth`/`requireApiRole` (401/403 JSON instead of a redirect) and has its own JSON 404/500 handlers, so `/api` never returns HTML. Shared request parsing lives in the service (e.g. `parseSuggestQuery` in `src/services/carton-suggest.js`) so the HTML and API routes validate identically. The extension imports `src/lib/units.js` and `src/types.js` typedefs directly and is type-checked by `npm run typecheck`.
 
 **Datastar/SSE**: `src/lib/sse.js` wraps Datastar v1's SSE protocol (`datastar-patch-elements`/`datastar-patch-signals` events) but as of now nothing in the app actually calls it — no route uses it and no view has `data-*` Datastar attributes. It's present for future use; the CDN `<script>` tag in `base.eta` loading Datastar v1 is otherwise inert.
 

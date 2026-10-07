@@ -149,7 +149,8 @@ class CartonSuggest extends HTMLElement {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "btn btn-ghost";
-        btn.textContent = `${carton.name}${carton.sku ? ` — ${carton.sku}` : ""} · ${this.#formatDims(carton)} · ${carton.quantity} in stock`;
+        const cut = carton.resize_height_cm != null ? ` · cut height to ${carton.resize_height_cm.toFixed(1)} cm` : "";
+        btn.textContent = `${carton.name}${carton.sku ? ` — ${carton.sku}` : ""} · ${this.#formatDims(carton)}${cut} · ${carton.quantity} in stock`;
         btn.addEventListener("click", () => this.#selectCarton(carton));
         li.appendChild(btn);
         list.appendChild(li);

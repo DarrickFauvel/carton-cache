@@ -35,33 +35,71 @@ function permutations([a, b, c]) {
 }
 
 /**
+ * A cut-down saving less than this isn't worth the effort, so the carton
+ * is suggested as-is instead.
+ */
+const MIN_CUT_CM = 1;
+
+/**
  * Tries every orientation of the item against a candidate carton. Fits
  * only if there's room for dunnage (packing padding) on both sides of
  * every axis — hence 2 * dunnageCm per matched dimension.
+ *
+ * For a resizable carton, the height axis can be cut down to the item's
+ * height plus dunnage, so the orientation that needs the shortest carton
+ * wins; resizeHeight is that cut height (null if not worth cutting).
  * @param {[number, number, number]} item
  * @param {[number, number, number]} carton
  * @param {number} dunnageCm
- * @returns {{ fits: boolean; leftoverVolume: number }}
+ * @param {boolean} [resizable]
+ * @returns {{ fits: boolean; leftoverVolume: number; resizeHeight: number | null }}
  */
-export function testFit(item, carton, dunnageCm) {
+export function testFit(item, carton, dunnageCm, resizable = false) {
   const [cl, cw, ch] = carton;
-  const cartonVolume = cl * cw * ch;
-  let best = { fits: false, leftoverVolume: Infinity };
+  /** @type {{ fits: boolean; leftoverVolume: number; resizeHeight: number | null }} */
+  let best = { fits: false, leftoverVolume: Infinity, resizeHeight: null };
 
   for (const [il, iw, ih] of permutations(item)) {
+    const neededHeight = ih + 2 * dunnageCm;
     const fits =
       il + 2 * dunnageCm <= cl &&
       iw + 2 * dunnageCm <= cw &&
-      ih + 2 * dunnageCm <= ch;
-    if (fits) {
-      const leftoverVolume = cartonVolume - il * iw * ih;
-      if (leftoverVolume < best.leftoverVolume) {
-        best = { fits: true, leftoverVolume };
-      }
+      neededHeight <= ch;
+    if (!fits) continue;
+    const resizeHeight = resizable && ch - neededHeight >= MIN_CUT_CM ? neededHeight : null;
+    const leftoverVolume = cl * cw * (resizeHeight ?? ch) - il * iw * ih;
+    if (leftoverVolume < best.leftoverVolume) {
+      best = { fits: true, leftoverVolume, resizeHeight };
     }
   }
 
   return best;
+}
+
+/**
+ * Parses and validates the /suggest query string (shared by the HTML-app
+ * route and the JSON API route so both validate identically).
+ * @param {import("express").Request["query"]} query
+ * @param {string} orgId
+ * @returns {{ args: SuggestArgs } | { error: string }}
+ */
+export function parseSuggestQuery(query, orgId) {
+  const length = parseFloat(String(query.length_cm ?? ""));
+  const width = parseFloat(String(query.width_cm ?? ""));
+  const height = parseFloat(String(query.height_cm ?? ""));
+  const dunnage = query.dunnage_cm !== undefined ? parseFloat(String(query.dunnage_cm)) : 2.5;
+  const locationId = query.location_id ? String(query.location_id) : undefined;
+
+  if (![length, width, height].every((n) => Number.isFinite(n) && n > 0)) {
+    return { error: "length_cm, width_cm, and height_cm are required and must be positive numbers." };
+  }
+  if (!Number.isFinite(dunnage) || dunnage < 0) {
+    return { error: "dunnage_cm must be a non-negative number." };
+  }
+
+  return {
+    args: { orgId, lengthCm: length, widthCm: width, heightCm: height, dunnageCm: dunnage, locationId },
+  };
 }
 
 /**
@@ -73,7 +111,7 @@ export async function suggest(args) {
   const item = /** @type {[number, number, number]} */ ([args.lengthCm, args.widthCm, args.heightCm]);
 
   const onSiteSql = `
-    SELECT ct.id, ct.name, ct.sku, ct.length_cm, ct.width_cm, ct.height_cm, SUM(il.quantity) AS quantity
+    SELECT ct.id, ct.name, ct.sku, ct.length_cm, ct.width_cm, ct.height_cm, ct.resizable, SUM(il.quantity) AS quantity
     FROM carton_types ct
     JOIN inventory_lots il ON il.carton_type_id = ct.id
     WHERE ct.org_id = ?
@@ -91,7 +129,7 @@ export async function suggest(args) {
     const carton = /** @type {[number, number, number]} */ ([
       Number(row.length_cm), Number(row.width_cm), Number(row.height_cm),
     ]);
-    const { fits, leftoverVolume } = testFit(item, carton, dunnageCm);
+    const { fits, leftoverVolume, resizeHeight } = testFit(item, carton, dunnageCm, Number(row.resizable) === 1);
     if (!fits) continue;
     onSite.push({
       id: /** @type {string} */ (row.id),
@@ -102,6 +140,7 @@ export async function suggest(args) {
       height_cm: carton[2],
       quantity: Number(row.quantity),
       leftover_volume_cm3: leftoverVolume,
+      resize_height_cm: resizeHeight,
     });
   }
   onSite.sort((a, b) => a.leftover_volume_cm3 - b.leftover_volume_cm3);

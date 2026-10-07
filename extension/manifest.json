@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Carton Cache",
+  "version": "0.1.0",
+  "description": "Find the right shipping carton from your Carton Cache inventory while listing and shipping.",
+  "action": { "default_title": "Open Carton Cache" },
+  "side_panel": { "default_path": "sidepanel.html" },
+  "background": { "service_worker": "dist/background.js", "type": "module" },
+  "permissions": ["sidePanel", "storage"],
+  "optional_host_permissions": ["http://localhost/*", "https://*/*"]
+}

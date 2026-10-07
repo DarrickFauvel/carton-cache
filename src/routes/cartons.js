@@ -23,6 +23,7 @@ function parseCartonBody(body) {
   const notes       = str(body.notes);
   const source_code = str(body.source_code);
   const size_code   = str(body.size_code);
+  const resizable   = str(body.resizable);
   return {
     name:        name.trim(),
     sku:         sku.trim()       || null,
@@ -34,6 +35,7 @@ function parseCartonBody(body) {
     notes:       notes.trim()     || null,
     source_code: source_code.trim() || null,
     size_code:   size_code.trim()   || null,
+    resizable:   resizable ? 1 : 0,
   };
 }
 
@@ -68,28 +70,9 @@ router.get("/lookup", requireAuth, async (req, res) => {
 });
 
 router.get("/suggest", requireAuth, async (req, res) => {
-  const length = parseFloat(String(req.query.length_cm ?? ""));
-  const width = parseFloat(String(req.query.width_cm ?? ""));
-  const height = parseFloat(String(req.query.height_cm ?? ""));
-  const dunnage = req.query.dunnage_cm !== undefined ? parseFloat(String(req.query.dunnage_cm)) : 2.5;
-  const locationId = req.query.location_id ? String(req.query.location_id) : undefined;
-
-  if (![length, width, height].every((n) => Number.isFinite(n) && n > 0)) {
-    return res.status(400).json({ error: "length_cm, width_cm, and height_cm are required and must be positive numbers." });
-  }
-  if (!Number.isFinite(dunnage) || dunnage < 0) {
-    return res.status(400).json({ error: "dunnage_cm must be a non-negative number." });
-  }
-
-  const result = await cartonSuggest.suggest({
-    orgId: defined(req.session.orgId),
-    lengthCm: length,
-    widthCm: width,
-    heightCm: height,
-    dunnageCm: dunnage,
-    locationId,
-  });
-  res.json(result);
+  const parsed = cartonSuggest.parseSuggestQuery(req.query, defined(req.session.orgId));
+  if ("error" in parsed) return res.status(400).json({ error: parsed.error });
+  res.json(await cartonSuggest.suggest(parsed.args));
 });
 
 router.get("/:id/label", requireAuth, async (req, res) => {
@@ -138,11 +121,11 @@ router.post("/", requireRole("admin", "manager"), async (req, res) => {
   const id = ulid();
   try {
     await db.execute({
-      sql: `INSERT INTO carton_types (id, name, sku, barcode, length_cm, width_cm, height_cm, unit_cost, notes, source_code, size_code, org_id, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO carton_types (id, name, sku, barcode, length_cm, width_cm, height_cm, unit_cost, notes, source_code, size_code, resizable, org_id, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [id, fields.name, fields.sku, fields.barcode,
              fields.length_cm, fields.width_cm, fields.height_cm,
-             fields.unit_cost, fields.notes, fields.source_code, fields.size_code,
+             fields.unit_cost, fields.notes, fields.source_code, fields.size_code, fields.resizable,
              defined(req.session.orgId), now()],
     });
   } catch (err) {
@@ -189,11 +172,11 @@ router.post("/:id/edit", requireRole("admin", "manager"), async (req, res) => {
   }
   try {
     await db.execute({
-      sql: `UPDATE carton_types SET name=?, sku=?, barcode=?, length_cm=?, width_cm=?, height_cm=?, unit_cost=?, notes=?, source_code=?, size_code=?
+      sql: `UPDATE carton_types SET name=?, sku=?, barcode=?, length_cm=?, width_cm=?, height_cm=?, unit_cost=?, notes=?, source_code=?, size_code=?, resizable=?
             WHERE id=? AND org_id=?`,
       args: [fields.name, fields.sku, fields.barcode,
              fields.length_cm, fields.width_cm, fields.height_cm,
-             fields.unit_cost, fields.notes, fields.source_code, fields.size_code, id, orgId],
+             fields.unit_cost, fields.notes, fields.source_code, fields.size_code, fields.resizable, id, orgId],
     });
   } catch (err) {
     const result = await db.execute({ sql: "SELECT * FROM carton_types WHERE id = ? AND org_id = ?", args: [id, orgId] });
