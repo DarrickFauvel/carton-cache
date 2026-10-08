@@ -158,7 +158,10 @@ router.get("/:id/edit", requireRole("admin", "manager"), async (req, res) => {
   if (!result.rows[0]) return res.redirect("/cartons");
   res.render("pages/cartons/form", {
     title: "Edit Carton Type",
-    carton: result.rows[0],
+    // Spread into a plain object: libsql rows are array-like, and their
+    // non-enumerable `length` (the column count) would otherwise be read by
+    // the form as the submitted `length` dimension.
+    carton: { ...result.rows[0] },
     error: null,
     componentScripts: FORM_SCRIPTS,
   });
