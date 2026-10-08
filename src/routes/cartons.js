@@ -37,7 +37,7 @@ function parseCartonBody(body) {
     length_cm:   length ? toCm(parseFloat(length), unit) : null,
     width_cm:    width  ? toCm(parseFloat(width), unit)  : null,
     height_cm:   height ? toCm(parseFloat(height), unit) : null,
-    unit_cost:   unit_cost ? parseFloat(unit_cost) : null,
+    unit_cost:   unit_cost ? parseFloat(unit_cost) : 0,
     notes:       notes.trim()     || null,
     source_code: source_code.trim() || null,
     size_code:   size_code.trim()   || null,
