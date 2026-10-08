@@ -38,29 +38,17 @@
       </div>
     </div>
 
-    <div class="input-row">
-      <div class="form-group">
-        <label for="source_code">Label source code <small>(optional)</small></label>
-        <input id="source_code" type="text" name="source_code"
-               value="<%= it.carton ? (it.carton.source_code || '') : '' %>" placeholder="ama, wal, non…"
-               list="source_code_options" autocomplete="off" />
-        <datalist id="source_code_options">
+    <div class="form-group">
+      <label for="source_code">Label source code <small>(optional)</small></label>
+      <input id="source_code" type="text" name="source_code"
+             value="<%= it.carton ? (it.carton.source_code || '') : '' %>" placeholder="ama, wal, non…"
+             list="source_code_options" autocomplete="off" />
+      <datalist id="source_code_options">
 <% it.sourceCodes.forEach(function(code) { %>
-          <option value="<%= code %>"></option>
+        <option value="<%= code %>"></option>
 <% }) %>
-        </datalist>
-      </div>
-      <div class="form-group">
-        <label for="size_code">Label size code <small>(optional)</small></label>
-        <input id="size_code" type="text" name="size_code"
-               value="<%= it.carton ? (it.carton.size_code || '') : '' %>" placeholder="20, sm, xyz…"
-               list="size_code_options" autocomplete="off" />
-        <datalist id="size_code_options">
-<% it.sizeCodes.forEach(function(code) { %>
-          <option value="<%= code %>"></option>
-<% }) %>
-        </datalist>
-      </div>
+      </datalist>
+      <small><label-preview source="source_code" unit="<%= it.unit %>" hidden></label-preview></small>
     </div>
 
     <div class="form-group">

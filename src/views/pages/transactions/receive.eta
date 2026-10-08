@@ -13,7 +13,7 @@
   <% } else { %>
   <p class="alert alert--warning" role="status">
     Received <%= it.printLabelCarton.name %>.
-    <a href="/cartons/<%= it.printLabelCarton.id %>/edit">Set a source &amp; size code</a> on this carton type to enable label printing.
+    <a href="/cartons/<%= it.printLabelCarton.id %>/edit">Set a source code</a> on this carton type to enable label printing.
   </p>
   <% } %>
 <% } %>

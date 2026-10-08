@@ -46,7 +46,6 @@
  * @property {number | null} unit_cost
  * @property {string | null} notes
  * @property {string | null} source_code
- * @property {string | null} size_code
  * @property {1 | 0} resizable height can be cut down to fit the item
  * @property {number} created_at
  */

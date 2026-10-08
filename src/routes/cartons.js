@@ -10,7 +10,7 @@ import { parseUnit, toCm, fromCm, cartonLabel, DEFAULT_WALL_THICKNESS_CM } from 
 
 const router = Router();
 
-const FORM_SCRIPTS = ["barcode-scanner"];
+const FORM_SCRIPTS = ["barcode-scanner", "label-preview"];
 
 /**
  * Dimensions arrive as `length`/`width`/`height` (actual inside, measured),
@@ -34,7 +34,6 @@ function parseCartonBody(body) {
   const unit_cost   = str(body.unit_cost);
   const notes       = str(body.notes);
   const source_code = str(body.source_code);
-  const size_code   = str(body.size_code);
   const resizable   = str(body.resizable);
   return {
     name:        name.trim(),
@@ -50,26 +49,19 @@ function parseCartonBody(body) {
     unit_cost:   unit_cost ? parseFloat(unit_cost) : 0,
     notes:       notes.trim()     || null,
     source_code: source_code.trim() || null,
-    size_code:   size_code.trim()   || null,
     resizable:   resizable ? 1 : 0,
   };
 }
 
 /**
- * Distinct label source/size codes already used in the org, offered as
+ * Distinct label source codes already used in the org, offered as
  * suggestions on the carton form (new codes can still be typed freely).
  * @param {string} orgId
- * @returns {Promise<{ sourceCodes: string[]; sizeCodes: string[] }>}
+ * @returns {Promise<{ sourceCodes: string[] }>}
  */
 async function labelCodeOptions(orgId) {
-  const [sources, sizes] = await Promise.all([
-    db.execute({ sql: "SELECT DISTINCT source_code AS code FROM carton_types WHERE org_id = ? AND source_code IS NOT NULL ORDER BY code", args: [orgId] }),
-    db.execute({ sql: "SELECT DISTINCT size_code AS code FROM carton_types WHERE org_id = ? AND size_code IS NOT NULL ORDER BY code", args: [orgId] }),
-  ]);
-  return {
-    sourceCodes: sources.rows.map((r) => String(r.code)),
-    sizeCodes:   sizes.rows.map((r) => String(r.code)),
-  };
+  const sources = await db.execute({ sql: "SELECT DISTINCT source_code AS code FROM carton_types WHERE org_id = ? AND source_code IS NOT NULL ORDER BY code", args: [orgId] });
+  return { sourceCodes: sources.rows.map((r) => String(r.code)) };
 }
 
 /**
@@ -172,12 +164,12 @@ router.post("/", requireRole("admin", "manager"), async (req, res) => {
     await db.execute({
       sql: `INSERT INTO carton_types (id, name, sku, barcode, length_cm, width_cm, height_cm,
                                       printed_length_cm, printed_width_cm, printed_height_cm, wall_thickness_cm,
-                                      unit_cost, notes, source_code, size_code, resizable, org_id, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                                      unit_cost, notes, source_code, resizable, org_id, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [id, fields.name, fields.sku, fields.barcode,
              fields.length_cm, fields.width_cm, fields.height_cm,
              fields.printed_length_cm, fields.printed_width_cm, fields.printed_height_cm, fields.wall_thickness_cm,
-             fields.unit_cost, fields.notes, fields.source_code, fields.size_code, fields.resizable,
+             fields.unit_cost, fields.notes, fields.source_code, fields.resizable,
              defined(req.session.orgId), now()],
     });
   } catch (err) {
@@ -225,12 +217,12 @@ router.post("/:id/edit", requireRole("admin", "manager"), async (req, res) => {
   try {
     await db.execute({
       sql: `UPDATE carton_types SET name=?, sku=?, barcode=?, length_cm=?, width_cm=?, height_cm=?,
-                   printed_length_cm=?, printed_width_cm=?, printed_height_cm=?, wall_thickness_cm=?, unit_cost=?, notes=?, source_code=?, size_code=?, resizable=?
+                   printed_length_cm=?, printed_width_cm=?, printed_height_cm=?, wall_thickness_cm=?, unit_cost=?, notes=?, source_code=?, resizable=?
             WHERE id=? AND org_id=?`,
       args: [fields.name, fields.sku, fields.barcode,
              fields.length_cm, fields.width_cm, fields.height_cm,
              fields.printed_length_cm, fields.printed_width_cm, fields.printed_height_cm, fields.wall_thickness_cm,
-             fields.unit_cost, fields.notes, fields.source_code, fields.size_code, fields.resizable, id, orgId],
+             fields.unit_cost, fields.notes, fields.source_code, fields.resizable, id, orgId],
     });
   } catch (err) {
     const result = await db.execute({ sql: "SELECT * FROM carton_types WHERE id = ? AND org_id = ?", args: [id, orgId] });
