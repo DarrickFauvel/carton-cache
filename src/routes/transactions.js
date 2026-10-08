@@ -64,41 +64,94 @@ router.post("/receive", requireAuth, async (req, res) => {
 
 // ── Consume ───────────────────────────────────────────────────────────────────
 
-router.get("/consume", requireAuth, async (req, res) => {
+/** @type {Condition[]} */
+const CONDITIONS = ["new", "good", "fair", "poor"];
+
+/**
+ * @typedef {object} ConsumeFormValues
+ * @property {string} location_id
+ * @property {string} carton_type_id
+ * @property {string} condition
+ * @property {string} quantity
+ * @property {string} notes
+ */
+
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @param {{ error?: string | null, values?: Partial<ConsumeFormValues> }} [opts]
+ */
+async function renderConsume(req, res, { error = null, values = {} } = {}) {
   const orgId = defined(req.session.orgId);
   const [locations, cartons] = await Promise.all([
     db.execute({ sql: "SELECT id, name FROM locations WHERE active = 1 AND org_id = ? ORDER BY name", args: [orgId] }),
     db.execute({ sql: "SELECT id, name, length_cm, width_cm, height_cm, printed_length_cm, printed_width_cm, printed_height_cm, barcode FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId] }),
   ]);
-  res.render("pages/transactions/consume", {
+  res.status(error ? 422 : 200).render("pages/transactions/consume", {
     title: "Consume Stock",
     locations: locations.rows,
     cartons: cartons.rows,
     componentScripts: ["barcode-scanner", "carton-scanner", "carton-suggest"],
-    // Preselect the location last consumed from (see Receive).
-    selectedLocationId: req.session.lastConsumeLocationId ?? "",
+    error,
+    // Preselect the location last consumed from (see Receive), unless a
+    // re-render after a failed POST passes the submitted values.
+    values: {
+      location_id: req.session.lastConsumeLocationId ?? "",
+      carton_type_id: "",
+      condition: "good",
+      quantity: "1",
+      notes: "",
+      ...values,
+    },
   });
-});
+}
+
+router.get("/consume", requireAuth, (req, res) => renderConsume(req, res));
 
 router.post("/consume", requireAuth, async (req, res) => {
-  const { location_id, carton_type_id, condition, quantity, notes } = req.body;
-  await inventory.consume({
-    orgId: defined(req.session.orgId),
-    locationId: str(location_id),
-    cartonTypeId: str(carton_type_id),
-    condition: /** @type {Condition} */ (str(condition)),
-    quantity: parseInt(str(quantity), 10),
-    userId: defined(req.session.userId),
-    notes: str(notes) || undefined,
-  });
-  req.session.lastConsumeLocationId = str(location_id);
+  /** @type {ConsumeFormValues} */
+  const values = {
+    location_id:    str(req.body.location_id),
+    carton_type_id: str(req.body.carton_type_id),
+    condition:      str(req.body.condition),
+    quantity:       str(req.body.quantity),
+    notes:          str(req.body.notes),
+  };
+  const quantity = Number(values.quantity);
+
+  /** @param {string} error */
+  const reject = (error) => renderConsume(req, res, { error, values });
+
+  if (!values.location_id || !values.carton_type_id) return reject("Choose a location and a carton type.");
+  const condition = CONDITIONS.find((c) => c === values.condition);
+  if (!condition) return reject("Choose a valid condition.");
+  if (!Number.isInteger(quantity) || quantity < 1) return reject("Quantity must be a whole number of at least 1.");
+
+  try {
+    await inventory.consume({
+      orgId: defined(req.session.orgId),
+      locationId: values.location_id,
+      cartonTypeId: values.carton_type_id,
+      condition,
+      quantity,
+      userId: defined(req.session.userId),
+      notes: values.notes || undefined,
+    });
+  } catch (err) {
+    if (err instanceof inventory.InsufficientStockError) {
+      return reject(
+        err.available === 0
+          ? `None of that carton type are in stock in ${condition} condition at that location.`
+          : `Only ${err.available} of that carton type are in stock in ${condition} condition at that location.`
+      );
+    }
+    throw err;
+  }
+  req.session.lastConsumeLocationId = values.location_id;
   res.redirect("/");
 });
 
 // ── Transfer ──────────────────────────────────────────────────────────────────
-
-/** @type {Condition[]} */
-const CONDITIONS = ["new", "good", "fair", "poor"];
 
 /**
  * @typedef {object} TransferFormValues
