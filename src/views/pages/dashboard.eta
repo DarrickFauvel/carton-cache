@@ -62,7 +62,7 @@
     <article class="lot-card<%= isLow(lot) ? ' lot-card--low' : '' %>">
       <header class="lot-card__header">
         <span class="lot-card__name"><%= lot.carton_name %></span>
-        <% const dims = it.formatDims(lot); if (dims) { %><span class="lot-card__sku"><%= dims %></span><% } %>
+        <% if (lot.length_cm != null && lot.width_cm != null && lot.height_cm != null) { %><span class="lot-card__sku"><%= it.toUnit(Number(lot.length_cm)) %><span class="dim-x">×</span><%= it.toUnit(Number(lot.width_cm)) %><span class="dim-x">×</span><%= it.toUnit(Number(lot.height_cm)) %> <%= it.unit %></span><% } %>
       </header>
       <div class="lot-card__condition condition--<%= lot.condition %>"><%= lot.condition %></div>
       <div class="lot-card__qty"><%= lot.quantity %></div>

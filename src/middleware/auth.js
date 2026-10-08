@@ -1,5 +1,5 @@
 import { defined } from "../lib/id.js";
-import { parseUnit, fromCm, formatDims, cartonLabel } from "../lib/units.js";
+import { parseUnit, fromCm, cartonLabel } from "../lib/units.js";
 
 /** @typedef {import("../types.js").Role} Role */
 
@@ -104,7 +104,6 @@ export function locals(req, res, next) {
   const unit = parseUnit(req.session.orgUnit);
   res.locals.unit = unit;
   res.locals.toUnit = (/** @type {number} */ cm) => fromCm(cm, unit);
-  res.locals.formatDims = (/** @type {Parameters<typeof formatDims>[0]} */ carton) => formatDims(carton, unit);
   res.locals.cartonLabel = (/** @type {Parameters<typeof cartonLabel>[0]} */ carton) => cartonLabel(carton, unit);
   res.locals.user = req.session.userId
     ? {

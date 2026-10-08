@@ -43,7 +43,7 @@
         <td data-label="Barcode"><% if (c.barcode) { %><code><%= c.barcode %></code><% } else { %>—<% } %></td>
         <td data-label="Dimensions (<%= it.unit %>)">
           <% if (c.length_cm && c.width_cm && c.height_cm) { %>
-          <%= it.toUnit(Number(c.length_cm)) %> × <%= it.toUnit(Number(c.width_cm)) %> × <%= it.toUnit(Number(c.height_cm)) %>
+          <%= it.toUnit(Number(c.length_cm)) %><span class="dim-x">×</span><%= it.toUnit(Number(c.width_cm)) %><span class="dim-x">×</span><%= it.toUnit(Number(c.height_cm)) %>
           <% } else { %>—<% } %>
         </td>
         <td data-label="Unit cost"><%= c.unit_cost != null ? '$' + Number(c.unit_cost).toFixed(2) : '—' %></td>

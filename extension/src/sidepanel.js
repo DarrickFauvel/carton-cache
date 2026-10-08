@@ -97,7 +97,7 @@ const wholeInchesUp = (cm) => Math.ceil(cmToIn(cm) - 1e-6);
 
 /** @param {{ length_cm: number; width_cm: number; height_cm: number }} c */
 const inchesLabel = (c) =>
-  `${oneDecimal(cmToIn(c.length_cm))} × ${oneDecimal(cmToIn(c.width_cm))} × ${oneDecimal(cmToIn(c.height_cm))} in`;
+  `${oneDecimal(cmToIn(c.length_cm))}\u2009×\u2009${oneDecimal(cmToIn(c.width_cm))}\u2009×\u2009${oneDecimal(cmToIn(c.height_cm))} in`;
 
 /** @param {{ length_cm: number; width_cm: number; height_cm: number }} c */
 const ebayDims = (c) => `${wholeInchesUp(c.length_cm)} x ${wholeInchesUp(c.width_cm)} x ${wholeInchesUp(c.height_cm)}`;

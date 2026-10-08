@@ -1081,6 +1081,12 @@ fieldset.form-group {
 .lot-card__header { display: flex; flex-direction: column; gap: var(--space-1); }
 .lot-card__name   { font-weight: 600; font-size: 0.95rem; }
 .lot-card__sku    { font-size: 0.75rem; color: var(--color-text-muted); font-family: var(--font-mono); }
+
+/* The × between L, W and H in HTML dimension text. Plain-text contexts
+   (<option>s, textContent) use thin spaces instead; see formatDims(). */
+/* Opacity rather than a color so it stays a step lighter than whatever text
+   it sits in (already-muted card text or normal table text), in both themes. */
+.dim-x { margin-inline: 0.15em; opacity: 0.75; }
 .lot-card__qty    { font-size: 2.25rem; font-weight: 800; line-height: 1; color: var(--color-primary); }
 .lot-card__alert  { font-size: 0.75rem; color: var(--color-warning); font-weight: 600; }
 
