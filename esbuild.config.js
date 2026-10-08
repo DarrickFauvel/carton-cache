@@ -10,6 +10,7 @@ const components = [
   "qr-modal",
   "carton-suggest",
   "location-stock-filter",
+  "label-preview",
 ];
 
 await Promise.all(
