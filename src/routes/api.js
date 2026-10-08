@@ -15,24 +15,6 @@ import { defined } from "../lib/id.js";
 
 const router = Router();
 
-/**
- * The user's assigned location IDs, read from the database rather than the
- * session (which only captures them at login), so assignment changes apply
- * without logging out. Also refreshes the session copy for the HTML app.
- * @param {import("express").Request} req
- * @returns {Promise<string[]>}
- */
-async function currentLocationIds(req) {
-  const result = await db.execute({
-    sql: "SELECT location_ids FROM users WHERE id = ? AND org_id = ?",
-    args: [defined(req.session.userId), defined(req.session.orgId)],
-  });
-  const raw = result.rows[0]?.location_ids;
-  const ids = typeof raw === "string" ? /** @type {string[]} */ (JSON.parse(raw)) : [];
-  req.session.userLocationIds = ids;
-  return ids;
-}
-
 /** @type {readonly Condition[]} */
 const CONDITIONS = ["new", "good", "fair", "poor"];
 
@@ -45,21 +27,9 @@ router.get("/me", requireApiAuth, (req, res) => {
 });
 
 router.get("/locations", requireApiAuth, async (req, res) => {
-  const { userRole } = req.session;
-  const orgId = defined(req.session.orgId);
-
-  if (userRole === "admin" || userRole === "manager") {
-    const result = await db.execute({
-      sql: "SELECT id, name FROM locations WHERE active = 1 AND org_id = ? ORDER BY name",
-      args: [orgId],
-    });
-    return res.json(result.rows);
-  }
-  const userLocationIds = await currentLocationIds(req);
-  if (userLocationIds.length === 0) return res.json([]);
   const result = await db.execute({
-    sql: `SELECT id, name FROM locations WHERE active = 1 AND org_id = ? AND id IN (${userLocationIds.map(() => "?").join(",")}) ORDER BY name`,
-    args: [orgId, ...userLocationIds],
+    sql: "SELECT id, name FROM locations WHERE active = 1 AND org_id = ? ORDER BY name",
+    args: [defined(req.session.orgId)],
   });
   res.json(result.rows);
 });
@@ -90,11 +60,7 @@ router.post("/transactions/consume", requireApiRole("admin", "manager", "staff")
     db.execute({ sql: "SELECT id FROM locations WHERE id = ? AND org_id = ? AND active = 1", args: [locationId, orgId] }),
     db.execute({ sql: "SELECT id FROM carton_types WHERE id = ? AND org_id = ?", args: [cartonTypeId, orgId] }),
   ]);
-  const role = req.session.userRole;
-  const canUseLocation =
-    location.rows.length > 0 &&
-    (role === "admin" || role === "manager" || (await currentLocationIds(req)).includes(locationId));
-  if (!canUseLocation) return res.status(400).json({ error: "Unknown location." });
+  if (location.rows.length === 0) return res.status(400).json({ error: "Unknown location." });
   if (carton.rows.length === 0) return res.status(400).json({ error: "Unknown carton type." });
 
   let transactionId;

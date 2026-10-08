@@ -15,7 +15,7 @@
  * @property {string} name
  * @property {string} password_hash
  * @property {Role} role
- * @property {string[]} location_ids stored as JSON in DB
+ * @property {string[]} location_ids stored as JSON in DB; unused (every user sees all of the org's locations)
  * @property {string} avatar_color
  * @property {string} org_id
  * @property {number} created_at

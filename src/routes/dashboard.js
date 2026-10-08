@@ -6,20 +6,7 @@ import { defined } from "../lib/id.js";
 const router = Router();
 
 router.get("/", requireAuth, async (req, res) => {
-  const { userRole } = req.session;
   const orgId = defined(req.session.orgId);
-  const userLocationIds = defined(req.session.userLocationIds);
-
-  const canSeeAll = userRole === "admin" || userRole === "manager";
-
-  const locationResult = await db.execute(
-    canSeeAll
-      ? { sql: "SELECT * FROM locations WHERE active = 1 AND org_id = ? ORDER BY name", args: [orgId] }
-      : {
-          sql: `SELECT * FROM locations WHERE active = 1 AND org_id = ? AND id IN (${userLocationIds.map(() => "?").join(",")}) ORDER BY name`,
-          args: [orgId, ...userLocationIds],
-        }
-  );
 
   const lotResult = await db.execute({
     sql: `
@@ -43,7 +30,6 @@ router.get("/", requireAuth, async (req, res) => {
 
   res.render("pages/dashboard", {
     title: "Dashboard",
-    locations: locationResult.rows,
     lots: lotResult.rows,
     thresholds: thresholdResult.rows,
   });

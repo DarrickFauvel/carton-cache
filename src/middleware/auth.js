@@ -110,7 +110,6 @@ export function locals(req, res, next) {
         id: req.session.userId,
         name: req.session.userName,
         role: req.session.userRole,
-        locationIds: req.session.userLocationIds,
         avatarColor: req.session.userAvatarColor ?? "color-1",
         initials: toInitials(req.session.userName ?? "?"),
         orgId: req.session.orgId,
