@@ -34,66 +34,73 @@
   <a href="/cartons/new" class="btn btn--primary"><%= it.archivedCount > 0 ? 'Add a carton type' : 'Add your first carton type' %></a>
 </div>
 <% } else { %>
-<div class="table-wrap">
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>SKU</th>
-        <th>Barcode</th>
-        <th>Printed (<%= it.unit %>)</th>
-        <th>Actual inside (<%= it.unit %>)</th>
-        <th>Unit cost</th>
-        <th>Label</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% it.cartons.forEach(function(c) { %>
-      <tr id="carton-<%= c.id %>">
-        <td data-label="Name"><strong><%= c.name %></strong><% if (c.archived_at != null) { %> <small class="badge">Archived</small><% } else if (Number(c.single_use) === 1) { %> <small class="badge">One-time use</small><% } %><% if (c.notes) { %><br><small><%= c.notes %></small><% } %></td>
-        <td data-label="SKU"><% if (c.sku) { %><code><%= c.sku %></code><% } else { %>—<% } %></td>
-        <td data-label="Barcode"><% if (c.barcode) { %><code><%= c.barcode %></code><% } else { %>—<% } %></td>
-        <td data-label="Printed (<%= it.unit %>)">
-          <% if (c.printed_length_cm != null && c.printed_width_cm != null && c.printed_height_cm != null) { %>
-          <%= it.toUnit(Number(c.printed_length_cm)) %><span class="dim-x">×</span><%= it.toUnit(Number(c.printed_width_cm)) %><span class="dim-x">×</span><%= it.toUnit(Number(c.printed_height_cm)) %>
-          <% } else { %>—<% } %>
-        </td>
-        <td data-label="Actual inside (<%= it.unit %>)">
-          <% if (c.length_cm && c.width_cm && c.height_cm) { %>
-          <%= it.toUnit(Number(c.length_cm)) %><span class="dim-x">×</span><%= it.toUnit(Number(c.width_cm)) %><span class="dim-x">×</span><%= it.toUnit(Number(c.height_cm)) %>
-          <% } else { %>—<% } %>
-        </td>
-        <td data-label="Unit cost"><%= c.unit_cost != null ? '$' + Number(c.unit_cost).toFixed(2) : '—' %></td>
-        <td data-label="Label">
-          <% if (c.label_code) { %>
-          <code><%= c.label_code %></code>
-          <% } else { %>—<% } %>
-        </td>
-        <td class="table-cell--actions">
-          <div class="action-row">
-            <% if (c.label_code) { %>
-            <a href="/cartons/<%= c.id %>/label" target="_blank" class="btn btn-ghost" aria-label="Print label for <%= c.name %>">Print</a>
-            <% } %>
-            <% if (it.user && (it.user.role === 'admin' || it.user.role === 'manager')) { %>
-            <a href="/cartons/<%= c.id %>/edit" class="btn btn-ghost">Edit</a>
-            <% if (c.archived_at != null) { %>
-            <form method="post" action="/cartons/<%= c.id %>/unarchive">
-              <button type="submit" class="btn btn-ghost">Unarchive</button>
-            </form>
-            <% } %>
-            <form method="post" action="/cartons/<%= c.id %>/delete<%= it.showArchived ? '?archived=1' : '' %>">
-              <button type="submit" class="btn btn--danger"
-                      onclick="return confirm('Delete <%= c.name %>? This cannot be undone.')">
-                Delete
-              </button>
-            </form>
-            <% } %>
-          </div>
-        </td>
-      </tr>
-      <% }) %>
-    </tbody>
-  </table>
-</div>
+<ul class="carton-list">
+  <% it.cartons.forEach(function(c) { %>
+  <%
+    const hasInside = c.length_cm && c.width_cm && c.height_cm;
+    const hasPrinted = c.printed_length_cm != null && c.printed_width_cm != null && c.printed_height_cm != null;
+  %>
+  <li class="carton-item<%= c.archived_at != null ? ' carton-item--archived' : '' %>" id="carton-<%= c.id %>">
+    <div class="carton-item__main">
+      <h2 class="carton-item__name">
+        <%= c.name %>
+        <% if (c.archived_at != null) { %><small class="badge">Archived</small><% } else if (Number(c.single_use) === 1) { %><small class="badge">One-time use</small><% } %>
+      </h2>
+      <p class="carton-item__dims">
+        <% if (hasInside) { %>
+        <span class="carton-item__dims-value"><%= it.toUnit(Number(c.length_cm)) %><span class="dim-x">×</span><%= it.toUnit(Number(c.width_cm)) %><span class="dim-x">×</span><%= it.toUnit(Number(c.height_cm)) %></span>
+        <span class="carton-item__dims-note"><%= it.unit %> inside</span>
+        <% } else { %>
+        <span class="carton-item__dims-note">No inside dimensions</span>
+        <% } %>
+      </p>
+      <% if (hasPrinted || c.sku || c.barcode || c.label_code || c.notes) { %>
+      <details class="carton-item__more">
+        <summary>
+          <span class="carton-item__preview">
+            <%= [
+              hasPrinted && 'Printed ' + it.toUnit(Number(c.printed_length_cm)) + ' × ' + it.toUnit(Number(c.printed_width_cm)) + ' × ' + it.toUnit(Number(c.printed_height_cm)),
+              c.sku && 'SKU ' + c.sku,
+              c.barcode && 'Barcode ' + c.barcode,
+              c.label_code && 'Label ' + c.label_code,
+              c.notes,
+            ].filter(Boolean).join(' · ') %>
+          </span>
+          <span class="carton-item__hide">Hide details</span>
+        </summary>
+        <dl class="carton-item__meta">
+          <% if (hasPrinted) { %><div><dt>Printed</dt><dd><%= it.toUnit(Number(c.printed_length_cm)) %><span class="dim-x">×</span><%= it.toUnit(Number(c.printed_width_cm)) %><span class="dim-x">×</span><%= it.toUnit(Number(c.printed_height_cm)) %> <%= it.unit %></dd></div><% } %>
+          <% if (c.sku) { %><div><dt>SKU</dt><dd><code><%= c.sku %></code></dd></div><% } %>
+          <% if (c.barcode) { %><div><dt>Barcode</dt><dd><code><%= c.barcode %></code></dd></div><% } %>
+          <% if (c.label_code) { %><div><dt>Label</dt><dd><code><%= c.label_code %></code></dd></div><% } %>
+        </dl>
+        <% if (c.notes) { %><p class="carton-item__notes"><%= c.notes %></p><% } %>
+      </details>
+      <% } %>
+    </div>
+    <p class="carton-item__cost">
+      <% if (c.unit_cost != null) { %><%= '$' + Number(c.unit_cost).toFixed(2) %> <small class="each">each</small><% } else { %><small>No cost</small><% } %>
+    </p>
+    <div class="carton-item__actions action-row">
+      <% if (c.label_code) { %>
+      <a href="/cartons/<%= c.id %>/label" target="_blank" class="btn btn-ghost" aria-label="Print label for <%= c.name %>">Print</a>
+      <% } %>
+      <% if (it.user && (it.user.role === 'admin' || it.user.role === 'manager')) { %>
+      <a href="/cartons/<%= c.id %>/edit" class="btn btn-ghost">Edit</a>
+      <% if (c.archived_at != null) { %>
+      <form method="post" action="/cartons/<%= c.id %>/unarchive">
+        <button type="submit" class="btn btn-ghost">Unarchive</button>
+      </form>
+      <% } %>
+      <form method="post" action="/cartons/<%= c.id %>/delete<%= it.showArchived ? '?archived=1' : '' %>">
+        <button type="submit" class="btn btn-ghost btn-ghost--danger"
+                onclick="return confirm('Delete <%= c.name %>? This cannot be undone.')">
+          Delete
+        </button>
+      </form>
+      <% } %>
+    </div>
+  </li>
+  <% }) %>
+</ul>
 <% } %>
