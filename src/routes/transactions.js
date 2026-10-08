@@ -40,8 +40,9 @@ router.get("/receive", requireAuth, async (req, res) => {
     canCreateCarton: userRole === "admin" || userRole === "manager",
     componentScripts: ["barcode-scanner", "quick-create", "carton-scanner"],
     printLabelCarton,
-    // Keep the location from the last receive selected for the next carton.
-    selectedLocationId: String(req.query.location ?? ""),
+    // Preselect the location last received into, for the next carton and
+    // later visits.
+    selectedLocationId: req.session.lastReceiveLocationId ?? "",
   });
 });
 
@@ -57,8 +58,8 @@ router.post("/receive", requireAuth, async (req, res) => {
     userId: defined(req.session.userId),
     notes: str(notes) || undefined,
   });
-  const params = new URLSearchParams({ printLabel: str(carton_type_id), location: str(location_id) });
-  res.redirect(`/transactions/receive?${params}`);
+  req.session.lastReceiveLocationId = str(location_id);
+  res.redirect(`/transactions/receive?printLabel=${encodeURIComponent(str(carton_type_id))}`);
 });
 
 // ── Consume ───────────────────────────────────────────────────────────────────
@@ -74,8 +75,7 @@ router.get("/consume", requireAuth, async (req, res) => {
     locations: locations.rows,
     cartons: cartons.rows,
     componentScripts: ["barcode-scanner", "carton-scanner", "carton-suggest"],
-    // Consume redirects to the dashboard, so remember the location in the
-    // session (rather than the redirect URL, as Receive does) for next time.
+    // Preselect the location last consumed from (see Receive).
     selectedLocationId: req.session.lastConsumeLocationId ?? "",
   });
 });
