@@ -161,7 +161,8 @@ class CartonSuggest extends HTMLElement {
         btn.type = "button";
         btn.className = "btn btn-ghost";
         const cut = carton.resize_height_cm != null ? ` · cut height to ${fromCm(carton.resize_height_cm, unit)} ${unit}` : "";
-        btn.textContent = `${cartonLabel(carton, unit)}${cut} · ${carton.quantity} in stock`;
+        const code = carton.label_code ? ` · ${carton.label_code}` : "";
+        btn.textContent = `${cartonLabel(carton, unit)}${code}${cut} · ${carton.quantity} in stock`;
         btn.addEventListener("click", () => this.#selectCarton(carton, unit));
         li.appendChild(btn);
         list.appendChild(li);
