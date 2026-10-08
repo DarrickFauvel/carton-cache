@@ -36,9 +36,13 @@
  * @property {string} name
  * @property {string | null} sku
  * @property {string | null} barcode
- * @property {number | null} length_cm
- * @property {number | null} width_cm
- * @property {number | null} height_cm
+ * @property {number | null} length_cm actual inside dimension (measured); used for fit
+ * @property {number | null} width_cm actual inside dimension (measured); used for fit
+ * @property {number | null} height_cm actual inside dimension (measured); used for fit
+ * @property {number | null} printed_length_cm nominal size printed on the box; names the carton
+ * @property {number | null} printed_width_cm nominal size printed on the box; names the carton
+ * @property {number | null} printed_height_cm nominal size printed on the box; names the carton
+ * @property {number} wall_thickness_cm outer = inside + 2 × wall thickness
  * @property {number | null} unit_cost
  * @property {string | null} notes
  * @property {string | null} source_code
@@ -116,6 +120,10 @@
  * @property {number} length_cm
  * @property {number} width_cm
  * @property {number} height_cm
+ * @property {number | null} printed_length_cm
+ * @property {number | null} printed_width_cm
+ * @property {number | null} printed_height_cm
+ * @property {number} wall_thickness_cm outer = inside + 2 × wall thickness
  * @property {number} quantity
  * @property {number} leftover_volume_cm3 after cutting down, if resize_height_cm is set
  * @property {number | null} resize_height_cm cut the carton down to this height; null = use as-is

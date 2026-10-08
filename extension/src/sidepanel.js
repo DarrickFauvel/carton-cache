@@ -4,7 +4,7 @@
  * fallback) with its dimensions ready to copy into eBay's package fields.
  */
 
-import { cmToIn, inToCm } from "../../src/lib/units.js";
+import { cmToIn, inToCm, outerCm } from "../../src/lib/units.js";
 import {
   ApiError,
   NotLoggedInError,
@@ -99,6 +99,18 @@ const wholeInchesUp = (cm) => Math.ceil(cmToIn(cm) - 1e-6);
 const inchesLabel = (c) =>
   `${oneDecimal(cmToIn(c.length_cm))}\u2009×\u2009${oneDecimal(cmToIn(c.width_cm))}\u2009×\u2009${oneDecimal(cmToIn(c.height_cm))} in`;
 
+/**
+ * An on-site carton's size: what's printed on the box, plus the actual
+ * inside size when that differs.
+ * @param {CartonSuggestion} c
+ */
+function onSiteSizeLabel(c) {
+  const inside = inchesLabel(c);
+  if (c.printed_length_cm == null || c.printed_width_cm == null || c.printed_height_cm == null) return inside;
+  const printed = inchesLabel({ length_cm: c.printed_length_cm, width_cm: c.printed_width_cm, height_cm: c.printed_height_cm });
+  return printed === inside ? printed : `${printed} (inside ${inside})`;
+}
+
 /** @param {{ length_cm: number; width_cm: number; height_cm: number }} c */
 const ebayDims = (c) => `${wholeInchesUp(c.length_cm)} x ${wholeInchesUp(c.width_cm)} x ${wholeInchesUp(c.height_cm)}`;
 
@@ -149,11 +161,17 @@ function cutHeightIn(c) {
 function onSiteCard(c) {
   const card = el("div", "card");
   const cut = cutHeightIn(c);
-  // Package dims as shipped: after cutting, the height is the cut height.
-  const shipped = cut == null ? c : { ...c, height_cm: inToCm(cut) };
+  // Package dims as shipped: outer size (actual inside plus a wall on each
+  // side), and after cutting, the height is the cut height.
+  const insideHeightCm = cut == null ? c.height_cm : inToCm(cut);
+  const shipped = {
+    length_cm: outerCm(c.length_cm, c.wall_thickness_cm),
+    width_cm:  outerCm(c.width_cm, c.wall_thickness_cm),
+    height_cm: outerCm(insideHeightCm, c.wall_thickness_cm),
+  };
   card.append(
     el("div", "name", c.name),
-    el("div", "meta", `${inchesLabel(c)} · ${c.quantity} in stock`)
+    el("div", "meta", `${onSiteSizeLabel(c)} · ${c.quantity} in stock`)
   );
   if (cut != null) card.append(el("div", "cut", `Cut height down to ${cut} in`));
   card.append(el("div", "meta", `eBay: ${ebayDims(shipped)}`), copyButton(shipped));

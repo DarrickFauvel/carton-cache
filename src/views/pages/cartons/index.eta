@@ -29,7 +29,8 @@
         <th>Name</th>
         <th>SKU</th>
         <th>Barcode</th>
-        <th>Dimensions (<%= it.unit %>)</th>
+        <th>Printed (<%= it.unit %>)</th>
+        <th>Actual inside (<%= it.unit %>)</th>
         <th>Unit cost</th>
         <th>Label</th>
         <th></th>
@@ -41,7 +42,12 @@
         <td data-label="Name"><strong><%= c.name %></strong><% if (c.notes) { %><br><small><%= c.notes %></small><% } %></td>
         <td data-label="SKU"><% if (c.sku) { %><code><%= c.sku %></code><% } else { %>—<% } %></td>
         <td data-label="Barcode"><% if (c.barcode) { %><code><%= c.barcode %></code><% } else { %>—<% } %></td>
-        <td data-label="Dimensions (<%= it.unit %>)">
+        <td data-label="Printed (<%= it.unit %>)">
+          <% if (c.printed_length_cm != null && c.printed_width_cm != null && c.printed_height_cm != null) { %>
+          <%= it.toUnit(Number(c.printed_length_cm)) %><span class="dim-x">×</span><%= it.toUnit(Number(c.printed_width_cm)) %><span class="dim-x">×</span><%= it.toUnit(Number(c.printed_height_cm)) %>
+          <% } else { %>—<% } %>
+        </td>
+        <td data-label="Actual inside (<%= it.unit %>)">
           <% if (c.length_cm && c.width_cm && c.height_cm) { %>
           <%= it.toUnit(Number(c.length_cm)) %><span class="dim-x">×</span><%= it.toUnit(Number(c.width_cm)) %><span class="dim-x">×</span><%= it.toUnit(Number(c.height_cm)) %>
           <% } else { %>—<% } %>
