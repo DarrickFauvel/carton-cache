@@ -14,48 +14,41 @@
 <section class="form-card">
   <form method="post" action="<%= it.carton ? '/cartons/' + it.carton.id + '/edit' : '/cartons' %>" class="stack">
 
-    <div class="form-group">
-      <label for="name">Name</label>
-      <input id="name" type="text" name="name"
-             value="<%= it.carton ? it.carton.name : '' %>" required autofocus />
-    </div>
+    <fieldset class="form-section">
+      <legend>Basics</legend>
 
-    <div class="form-group">
-      <label for="sku">SKU <small>(optional)</small></label>
-      <input id="sku" type="text" name="sku"
-             value="<%= it.carton ? (it.carton.sku || '') : '' %>" />
-    </div>
-
-    <div class="form-group">
-      <label for="barcode">Barcode <small>(optional)</small></label>
-      <div class="input-row">
-        <input id="barcode" type="text" name="barcode"
-               value="<%= it.carton ? (it.carton.barcode || '') : '' %>"
-               inputmode="numeric" autocomplete="off" />
-        <barcode-scanner target="barcode">
-          <button type="button" class="btn btn--scan" aria-label="Scan barcode">Scan</button>
-        </barcode-scanner>
+      <div class="form-group">
+        <label for="name">Name</label>
+        <input id="name" type="text" name="name"
+               value="<%= it.carton ? it.carton.name : '' %>" required autofocus />
       </div>
-    </div>
 
-    <div class="form-group">
-      <label for="source_code">Label source code <small>(optional)</small></label>
-      <input id="source_code" type="text" name="source_code"
-             value="<%= it.carton ? (it.carton.source_code || '') : '' %>" placeholder="ama, wal, non…"
-             list="source_code_options" autocomplete="off" />
-      <datalist id="source_code_options">
-<% it.sourceCodes.forEach(function(code) { %>
-        <option value="<%= code %>"></option>
-<% }) %>
-      </datalist>
-      <small><label-preview source="source_code" unit="<%= it.unit %>" hidden></label-preview></small>
-    </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="sku">SKU <small>(optional)</small></label>
+          <input id="sku" type="text" name="sku"
+                 value="<%= it.carton ? (it.carton.sku || '') : '' %>" />
+        </div>
 
-    <div class="form-group">
-      <label for="unit_cost">Unit cost <small>(optional)</small></label>
-      <input id="unit_cost" type="number" name="unit_cost" inputmode="decimal" min="0" step="0.01"
-             value="<%= it.carton && it.carton.unit_cost != null && it.carton.unit_cost !== '' ? it.carton.unit_cost : 0 %>" />
-    </div>
+        <div class="form-group">
+          <label for="unit_cost">Unit cost <small>(optional)</small></label>
+          <input id="unit_cost" type="number" name="unit_cost" inputmode="decimal" min="0" step="0.01"
+                 value="<%= it.carton && it.carton.unit_cost != null && it.carton.unit_cost !== '' ? it.carton.unit_cost : 0 %>" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="barcode">Barcode <small>(optional)</small></label>
+        <div class="input-row">
+          <input id="barcode" type="text" name="barcode"
+                 value="<%= it.carton ? (it.carton.barcode || '') : '' %>"
+                 inputmode="numeric" autocomplete="off" />
+          <barcode-scanner target="barcode">
+            <button type="button" class="btn btn--scan" aria-label="Scan barcode">Scan</button>
+          </barcode-scanner>
+        </div>
+      </div>
+    </fieldset>
 
     <input type="hidden" name="dim_unit" value="<%= it.unit %>" />
 <% // Re-rendered after a failed POST, carton holds the raw submitted values
@@ -70,67 +63,93 @@
      return ['length', 'width', 'height'].map(function(dim) {
        return { name: prefix + dim, letter: dim.charAt(0).toUpperCase(), value: dimValue(prefix + dim) };
      });
-   } %>
-    <fieldset class="form-group">
-      <legend>Printed size (<%= it.unit %>) <small>(optional)</small></legend>
-      <div class="dims-row">
-<% dimInputs('printed_').forEach(function(d) { %>
-        <div class="form-group">
-          <label for="<%= d.name %>"><%= d.letter %></label>
-          <input id="<%= d.name %>" type="number" name="<%= d.name %>" inputmode="decimal" min="0" step="any"
-                 value="<%= d.value %>" placeholder="—" />
-        </div>
-<% }) %>
-      </div>
-      <small>The size printed on the box, e.g. 6 × 6 × 6. Names the carton and goes on its label.</small>
-    </fieldset>
-
-    <fieldset class="form-group">
-      <legend>Actual inside dimensions (<%= it.unit %>) <small>(optional)</small></legend>
-      <div class="dims-row">
-<% dimInputs('').forEach(function(d) { %>
-        <div class="form-group">
-          <label for="<%= d.name %>"><%= d.letter %></label>
-          <input id="<%= d.name %>" type="number" name="<%= d.name %>" inputmode="decimal" min="0" step="any"
-                 value="<%= d.value %>" placeholder="—" />
-        </div>
-<% }) %>
-      </div>
-      <small>Measured inside the box, e.g. 5.75 × 5.75 × 6.25. Used to check whether an item fits.</small>
-<% var c = it.carton;
+   }
+   var c = it.carton;
    // Raw submitted value after a failed POST, else the stored value, else the default.
    var wall = c && c.wall_thickness !== undefined ? c.wall_thickness
             : it.toWallUnit(c && c.wall_thickness_cm != null ? Number(c.wall_thickness_cm) : it.defaultWallThicknessCm); %>
+    <fieldset class="form-section">
+      <legend>Size (<%= it.unit %>)</legend>
+
+      <fieldset class="form-group">
+        <legend>Printed on the box <small>(optional)</small></legend>
+        <div class="dims-row">
+<% dimInputs('printed_').forEach(function(d) { %>
+          <div class="form-group">
+            <label for="<%= d.name %>"><%= d.letter %></label>
+            <input id="<%= d.name %>" type="number" name="<%= d.name %>" inputmode="decimal" min="0" step="any"
+                   value="<%= d.value %>" placeholder="—" />
+          </div>
+<% }) %>
+        </div>
+        <small>e.g. 6 × 6 × 6. Names the carton and goes on its label.</small>
+      </fieldset>
+
+      <fieldset class="form-group">
+        <legend>Actual inside <small>(optional)</small></legend>
+        <div class="dims-row">
+<% dimInputs('').forEach(function(d) { %>
+          <div class="form-group">
+            <label for="<%= d.name %>"><%= d.letter %></label>
+            <input id="<%= d.name %>" type="number" name="<%= d.name %>" inputmode="decimal" min="0" step="any"
+                   value="<%= d.value %>" placeholder="—" />
+          </div>
+<% }) %>
+        </div>
+        <small>Measured inside the box, e.g. 5.75 × 5.75 × 6.25. Used to check whether an item fits.</small>
+      </fieldset>
+
       <div class="form-group">
-        <label for="wall_thickness">Wall thickness (<%= it.unit %>)</label>
+        <label for="wall_thickness">Wall thickness</label>
         <input id="wall_thickness" type="number" name="wall_thickness" inputmode="decimal" min="0" step="any"
                value="<%= wall %>" />
         <small>Outer size = inside + 2 × wall. Used for eBay package sizes; the default (<%= it.toWallUnit(it.defaultWallThicknessCm) %> <%= it.unit %>) suits single-wall cardboard.</small>
       </div>
     </fieldset>
 
-    <div class="form-group">
-      <label>
-        <input type="checkbox" name="resizable" value="1"
-               <%= it.carton && Number(it.carton.resizable) === 1 ? 'checked' : '' %> />
-        Height can be cut down
-      </label>
-      <small>Carton suggestions will say how far to cut this carton down to fit the item.</small>
-    </div>
+    <fieldset class="form-section">
+      <legend>Label</legend>
 
-    <div class="form-group">
-      <label>
-        <input type="checkbox" name="single_use" value="1"
-               <%= it.carton && Number(it.carton.single_use) === 1 ? 'checked' : '' %> />
-        One-time use
-      </label>
-      <small>For cartons you won't restock, like an unbranded box that came with an item. Once its stock runs out it's archived: hidden from Consume, Transfer and Adjust, with its history kept. Receiving it again brings it back.</small>
-    </div>
+      <div class="form-group">
+        <label for="source_code">Source code <small>(optional)</small></label>
+        <input id="source_code" type="text" name="source_code"
+               value="<%= it.carton ? (it.carton.source_code || '') : '' %>" placeholder="ama, wal, non…"
+               list="source_code_options" autocomplete="off" />
+        <datalist id="source_code_options">
+<% it.sourceCodes.forEach(function(code) { %>
+          <option value="<%= code %>"></option>
+<% }) %>
+        </datalist>
+        <small><label-preview source="source_code" unit="<%= it.unit %>" hidden></label-preview></small>
+      </div>
+    </fieldset>
 
-    <div class="form-group">
-      <label for="notes">Notes <small>(optional)</small></label>
-      <textarea id="notes" name="notes" rows="2"><%= it.carton ? (it.carton.notes || '') : '' %></textarea>
-    </div>
+    <fieldset class="form-section">
+      <legend>Usage</legend>
+
+      <div class="form-group">
+        <label class="checkbox-field">
+          <input type="checkbox" name="resizable" value="1"
+                 <%= it.carton && Number(it.carton.resizable) === 1 ? 'checked' : '' %> />
+          Height can be cut down
+        </label>
+        <small>Carton suggestions will say how far to cut this carton down to fit the item.</small>
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-field">
+          <input type="checkbox" name="single_use" value="1"
+                 <%= it.carton && Number(it.carton.single_use) === 1 ? 'checked' : '' %> />
+          One-time use
+        </label>
+        <small>For cartons you won't restock, like an unbranded box that came with an item. Once its stock runs out it's archived: hidden from Consume, Transfer and Adjust, with its history kept. Receiving it again brings it back.</small>
+      </div>
+
+      <div class="form-group">
+        <label for="notes">Notes <small>(optional)</small></label>
+        <textarea id="notes" name="notes" rows="2"><%= it.carton ? (it.carton.notes || '') : '' %></textarea>
+      </div>
+    </fieldset>
 
     <button type="submit" class="btn btn--primary">
       <%= it.carton ? 'Save changes' : 'Create carton type' %>
