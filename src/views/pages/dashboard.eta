@@ -20,57 +20,62 @@
   </a>
 </nav>
 
-<%
-  /* Build a threshold lookup: "locationId:cartonTypeId:condition" -> min_quantity */
-  const thresholdMap = {};
-  it.thresholds.forEach(function(t) {
-    thresholdMap[t.location_id + ':' + t.carton_type_id + ':' + t.condition] = t.min_quantity;
-    thresholdMap[t.location_id + ':' + t.carton_type_id + ':any'] = t.min_quantity;
-  });
+<% const conditionLabel = { new: 'New', good: 'Good', fair: 'Fair', poor: 'Poor', any: 'Any condition' }; %>
 
-  function isLow(lot) {
-    const specific = thresholdMap[lot.location_id + ':' + lot.carton_type_id + ':' + lot.condition];
-    const any      = thresholdMap[lot.location_id + ':' + lot.carton_type_id + ':any'];
-    const min = specific ?? any;
-    return min != null && lot.quantity <= min;
-  }
-
-  /* Group lots by location */
-  const byLocation = {};
-  it.lots.forEach(function(lot) {
-    if (!byLocation[lot.location_id]) byLocation[lot.location_id] = { name: lot.location_name, lots: [] };
-    byLocation[lot.location_id].lots.push(lot);
-  });
-%>
-
-<% if (Object.keys(byLocation).length === 0) { %>
+<% if (it.locations.length === 0) { %>
 <div class="empty-state">
   <p>No stock recorded yet.</p>
   <a href="/transactions/receive" class="btn btn--primary">Receive your first cartons</a>
 </div>
 <% } %>
 
-<% if (Object.keys(byLocation).length > 0) { %>
+<% if (it.lowStock.length > 0) { %>
+<section class="low-stock" aria-labelledby="low-stock-heading">
+  <h2 id="low-stock-heading" class="low-stock__title">Low stock <span class="low-stock__count"><%= it.lowStock.length %></span></h2>
+  <ul class="low-stock__list">
+    <% it.lowStock.forEach(function(a) { %>
+    <li>
+      <a href="#<%= a.rowId %>">
+        <span class="low-stock__name"><%= a.name %></span>
+        <span class="low-stock__where"><%= a.location_name %> · <%= conditionLabel[a.condition] %></span>
+        <span class="low-stock__qty"><%= a.quantity %> <small>/ min <%= a.min_quantity %></small></span>
+      </a>
+    </li>
+    <% }) %>
+  </ul>
+</section>
+<% } %>
+
+<% if (it.locations.length > 0) { %>
 <h2 class="inventory-heading">Inventory</h2>
 <% } %>
 
-<% Object.values(byLocation).forEach(function(loc) { %>
+<% it.locations.forEach(function(loc) { %>
 <section class="location-block">
   <h2 class="location-title"><%= loc.name %></h2>
-  <div class="lot-grid">
-    <% loc.lots.forEach(function(lot) { %>
-    <article class="lot-card<%= isLow(lot) ? ' lot-card--low' : '' %>">
-      <header class="lot-card__header">
-        <span class="lot-card__name"><%= lot.carton_name %></span>
-        <% if (lot.length_cm != null && lot.width_cm != null && lot.height_cm != null) { %><span class="lot-card__sku"><%= it.toUnit(Number(lot.length_cm)) %><span class="dim-x">×</span><%= it.toUnit(Number(lot.width_cm)) %><span class="dim-x">×</span><%= it.toUnit(Number(lot.height_cm)) %> <%= it.unit %></span><% } %>
-      </header>
-      <div class="lot-card__condition condition--<%= lot.condition %>"><%= lot.condition %></div>
-      <div class="lot-card__qty"><%= lot.quantity %></div>
-      <% if (isLow(lot)) { %>
-      <div class="lot-card__alert" role="alert">Low stock</div>
-      <% } %>
-    </article>
+  <ul class="stock-list">
+    <% loc.rows.forEach(function(row) { %>
+    <li class="stock-row<%= row.low ? ' stock-row--low' : '' %>" id="<%= row.id %>">
+      <% const hasDims = row.length_cm != null && row.width_cm != null && row.height_cm != null; %>
+      <div class="stock-row__main">
+        <% if (row.label_code) { %>
+        <span class="stock-row__lead stock-row__label"><%= row.label_code %></span>
+        <% } else if (hasDims) { %>
+        <span class="stock-row__lead"><%= it.toUnit(row.length_cm) %><span class="dim-x">×</span><%= it.toUnit(row.width_cm) %><span class="dim-x">×</span><%= it.toUnit(row.height_cm) %> <small><%= it.unit %></small></span>
+        <% } else { %>
+        <span class="stock-row__lead stock-row__lead--none">No size</span>
+        <% } %>
+        <span class="stock-row__name"><%= row.name %><% if (row.low) { %> <small class="stock-row__flag">Low</small><% } %></span>
+      </div>
+      <div class="stock-row__conditions">
+        <% row.conditions.forEach(function(c) { %>
+        <span class="stock-chip condition--<%= c.condition %>"><%= conditionLabel[c.condition] %> <strong><%= c.quantity %></strong></span>
+        <% }) %>
+        <% if (row.total === 0) { %><span class="stock-row__out">Out of stock</span><% } %>
+      </div>
+      <div class="stock-row__total" aria-label="<%= row.total %> in stock"><%= row.total %></div>
+    </li>
     <% }) %>
-  </div>
+  </ul>
 </section>
 <% }) %>

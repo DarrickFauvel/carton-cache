@@ -1139,6 +1139,184 @@ qty-stepper {
   font-weight: 700;
 }
 
+/* ── Dashboard stock list ─────────────────────────────────────────────────── */
+/* One row per carton type at a location: label code (or size) and name, a chip per condition
+   in stock, and the total. Sorted by label source, then size, by the route. */
+.stock-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.stock-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas: "main conditions total";
+  align-items: center;
+  gap: var(--space-1) var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  border-left: 3px solid transparent;
+  scroll-margin-top: calc(var(--nav-h) + var(--space-4));
+  transition: background-color 0.2s ease;
+
+  &:last-child { border-bottom: none; }
+
+  &.stock-row--low {
+    border-left-color: var(--card-low-border);
+    background: var(--card-low-bg);
+  }
+
+  &:target { animation: row-flash 2s ease-out; }
+
+  @container location (max-width: 520px) {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "main       total"
+      "conditions total";
+  }
+}
+
+.stock-row__main {
+  grid-area: main;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-3);
+  min-width: 0;
+}
+
+/* The row's lead: the label code printed on the box, else the size. */
+.stock-row__lead {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+
+  & small { font-weight: 400; color: var(--color-text-muted); }
+  &.stock-row__lead--none { font-weight: 400; color: var(--color-text-muted); }
+}
+
+.stock-row__label { font-family: var(--font-mono); }
+
+.stock-row__name {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.stock-row__flag {
+  margin-inline-start: var(--space-1);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-warning);
+}
+
+.stock-row__conditions {
+  grid-area: conditions;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+/* Condition chip: reuses the .condition--* colors, with the count in bold. */
+.stock-chip {
+  gap: 0.35em;
+  font-variant-numeric: tabular-nums;
+
+  & strong { font-weight: 800; }
+}
+
+.stock-row__out {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-warning);
+}
+
+.stock-row__total {
+  grid-area: total;
+  min-width: 2ch;
+  text-align: right;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-primary);
+
+  .stock-row--low & { color: var(--color-warning); }
+}
+
+/* ── Dashboard low-stock summary ──────────────────────────────────────────── */
+.low-stock {
+  margin-bottom: var(--space-8);
+  border: 1px solid var(--alert-warning-border);
+  border-left: 3px solid var(--color-warning);
+  border-radius: var(--radius);
+  background: var(--alert-warning-bg);
+  overflow: hidden;
+}
+
+.low-stock__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3) var(--space-4) var(--space-2);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-warning);
+}
+
+.low-stock__count {
+  padding: 0 var(--space-2);
+  border-radius: 999px;
+  background: var(--color-warning);
+  color: #fff;
+  font-size: 0.75rem;
+  letter-spacing: 0;
+}
+
+.low-stock__list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 var(--space-2);
+
+  & a {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 var(--space-3);
+    padding: var(--space-2) var(--space-4);
+    color: inherit;
+    text-decoration: none;
+    transition: background-color 0.15s ease;
+
+    &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+    @media (hover: hover) {
+      &:hover { background: color-mix(in srgb, var(--color-warning) 10%, transparent); }
+    }
+  }
+}
+
+.low-stock__name { font-weight: 600; }
+.low-stock__where { font-size: 0.85rem; color: var(--color-text-muted); }
+.low-stock__qty {
+  margin-inline-start: auto;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-warning);
+
+  & small { font-weight: 400; color: var(--color-text-muted); }
+}
+
 .lot-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -1164,16 +1342,8 @@ qty-stepper {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     transform: translateY(-1px);
   }
-
-  &--low {
-    border-color: var(--card-low-border);
-    border-left-width: 3px;
-    background: var(--card-low-bg);
-  }
-
 }
 
-.lot-card__header { display: flex; flex-direction: column; gap: var(--space-1); }
 .lot-card__name   { font-weight: 600; font-size: 0.95rem; }
 .lot-card__sku    { font-size: 0.75rem; color: var(--color-text-muted); font-family: var(--font-mono); }
 
@@ -1183,7 +1353,6 @@ qty-stepper {
    it sits in (already-muted card text or normal table text), in both themes. */
 .dim-x { margin-inline: 0.15em; opacity: 0.75; }
 .lot-card__qty    { font-size: 2.25rem; font-weight: 800; line-height: 1; color: var(--color-primary); }
-.lot-card__alert  { font-size: 0.75rem; color: var(--color-warning); font-weight: 600; }
 
 /* ── Condition badges ─────────────────────────────────────────────────────── */
 :is(.condition--new, .condition--good, .condition--fair, .condition--poor) {
