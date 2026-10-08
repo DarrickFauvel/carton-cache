@@ -1363,6 +1363,21 @@ qty-stepper {
 
 .stock-row__label { font-family: var(--font-mono); }
 
+.stock-row__print {
+  display: inline-grid;
+  place-items: center;
+  /* Comfortable tap target without growing the row. */
+  margin-block: calc(-1 * var(--space-2));
+  margin-inline-start: var(--space-1);
+  padding: var(--space-2);
+  vertical-align: middle;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+
+  & svg { width: 1.1em; height: 1.1em; }
+  &:hover, &:focus-visible { color: var(--color-primary); }
+}
+
 .stock-row__name {
   font-size: 0.9rem;
   color: var(--color-text-muted);

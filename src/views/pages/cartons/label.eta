@@ -39,6 +39,10 @@
       const maxPx = MAX_PT * 96 / 72;
       code.style.fontSize = Math.min(fitPx, maxPx) + "px";
     }
+    // Close the tab once the print dialog is done. Browsers only allow this in
+    // a tab opened just for the label (target="_blank"), so it's a no-op when
+    // the page was reached some other way.
+    window.addEventListener("afterprint", () => window.close());
     window.onload = () => {
       fitCode();
       window.print();
