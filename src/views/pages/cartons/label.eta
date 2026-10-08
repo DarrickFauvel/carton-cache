@@ -9,7 +9,7 @@
     /* Exactly the printable area (page minus @page margins), on screen too, so
        the fit measured on screen matches what prints. */
     .label { box-sizing: border-box; width: 3.4in; height: 1.025in; padding: 0 0.15in; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-    .code { font-size: 24pt; font-weight: bold; white-space: nowrap; line-height: 1; }
+    .code { font-size: 28pt; font-weight: bold; white-space: nowrap; line-height: 1; }
     .actions { position: fixed; bottom: 0.1in; }
     @media print { .actions { display: none; } }
   </style>
@@ -22,7 +22,7 @@
   </div>
   <script>
     // Largest size the code is printed at; long codes shrink below this to fit.
-    const MAX_PT = 24;
+    const MAX_PT = 28;
 
     // Print the code at MAX_PT, or smaller if that wouldn't fit the label's
     // width (or height). Text width grows linearly with font size, so one
