@@ -62,7 +62,7 @@
     <article class="lot-card<%= isLow(lot) ? ' lot-card--low' : '' %>">
       <header class="lot-card__header">
         <span class="lot-card__name"><%= lot.carton_name %></span>
-        <% if (lot.sku) { %><span class="lot-card__sku"><%= lot.sku %></span><% } %>
+        <% const dims = it.formatDims(lot); if (dims) { %><span class="lot-card__sku"><%= dims %></span><% } %>
       </header>
       <div class="lot-card__condition condition--<%= lot.condition %>"><%= lot.condition %></div>
       <div class="lot-card__qty"><%= lot.quantity %></div>

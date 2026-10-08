@@ -25,7 +25,7 @@ router.get("/", requireAuth, async (req, res) => {
     sql: `
       SELECT
         il.id, il.location_id, il.carton_type_id, il.condition, il.quantity, il.updated_at,
-        ct.name AS carton_name, ct.sku, ct.unit_cost,
+        ct.name AS carton_name, ct.length_cm, ct.width_cm, ct.height_cm, ct.unit_cost,
         l.name AS location_name
       FROM inventory_lots il
       JOIN carton_types ct ON ct.id = il.carton_type_id

@@ -61,7 +61,7 @@ class CartonScanner extends HTMLElement {
       const res = await fetch(`${lookupUrl}?barcode=${encodeURIComponent(lookupValue)}`);
 
       if (res.ok) {
-        const carton = /** @type {{ id: string; name: string; sku?: string | null }} */ (await res.json());
+        const carton = /** @type {{ id: string; name: string; label?: string }} */ (await res.json());
         this.#selectCarton(targetId, carton);
         this.#prefillQuantity(qtyTargetId, parsed.quantity);
         this.#prefillNotes(notesTargetId, parsed.lot, parsed.expiry);
@@ -87,7 +87,7 @@ class CartonScanner extends HTMLElement {
 
   /**
    * @param {string} targetId
-   * @param {{ id: string; name: string; sku?: string | null }} carton
+   * @param {{ id: string; name: string; label?: string }} carton
    */
   #selectCarton(targetId, carton) {
     const select = /** @type {HTMLSelectElement | null} */ (document.getElementById(targetId));
@@ -97,7 +97,7 @@ class CartonScanner extends HTMLElement {
     if (!opt) {
       opt = document.createElement("option");
       opt.value = carton.id;
-      opt.textContent = carton.sku ? `${carton.name} — ${carton.sku}` : carton.name;
+      opt.textContent = carton.label ?? carton.name;
       select.appendChild(opt);
     }
 

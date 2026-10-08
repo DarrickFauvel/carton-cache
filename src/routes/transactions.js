@@ -17,7 +17,7 @@ router.get("/receive", requireAuth, async (req, res) => {
   const { userRole } = req.session;
   const [locations, cartons] = await Promise.all([
     db.execute({ sql: "SELECT id, name FROM locations WHERE active = 1 AND org_id = ? ORDER BY name", args: [orgId] }),
-    db.execute({ sql: "SELECT id, name, sku, barcode, unit_cost FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId] }),
+    db.execute({ sql: "SELECT id, name, length_cm, width_cm, height_cm, barcode, unit_cost FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId] }),
   ]);
 
   let printLabelCarton = null;
@@ -64,7 +64,7 @@ router.get("/consume", requireAuth, async (req, res) => {
   const orgId = defined(req.session.orgId);
   const [locations, cartons] = await Promise.all([
     db.execute({ sql: "SELECT id, name FROM locations WHERE active = 1 AND org_id = ? ORDER BY name", args: [orgId] }),
-    db.execute({ sql: "SELECT id, name, sku, barcode FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId] }),
+    db.execute({ sql: "SELECT id, name, length_cm, width_cm, height_cm, barcode FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId] }),
   ]);
   res.render("pages/transactions/consume", {
     title: "Consume Stock",
@@ -94,7 +94,7 @@ router.get("/transfer", requireAuth, async (req, res) => {
   const orgId = defined(req.session.orgId);
   const [locations, cartons] = await Promise.all([
     db.execute({ sql: "SELECT id, name FROM locations WHERE active = 1 AND org_id = ? ORDER BY name", args: [orgId] }),
-    db.execute({ sql: "SELECT id, name, sku, barcode FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId] }),
+    db.execute({ sql: "SELECT id, name, length_cm, width_cm, height_cm, barcode FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId] }),
   ]);
   res.render("pages/transactions/transfer", {
     title: "Transfer Stock",
@@ -124,7 +124,7 @@ router.get("/adjust", requireRole("admin", "manager"), async (req, res) => {
   const orgId = defined(req.session.orgId);
   const [locations, cartons] = await Promise.all([
     db.execute({ sql: "SELECT id, name FROM locations WHERE active = 1 AND org_id = ? ORDER BY name", args: [orgId] }),
-    db.execute({ sql: "SELECT id, name, sku FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId] }),
+    db.execute({ sql: "SELECT id, name, length_cm, width_cm, height_cm FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId] }),
   ]);
   res.render("pages/transactions/adjust", {
     title: "Adjust Stock",
