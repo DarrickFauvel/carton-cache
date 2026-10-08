@@ -4,6 +4,7 @@ import { db } from "../db/client.js";
 import * as inventory from "../services/inventory.js";
 import { str, defined } from "../lib/id.js";
 import { buildLabelCode } from "../lib/labels.js";
+import { labelCodeOptions } from "./cartons.js";
 
 /** @typedef {import("../types.js").Condition} Condition */
 /** @typedef {import("../types.js").CartonType} CartonType */
@@ -15,9 +16,10 @@ const router = Router();
 router.get("/receive", requireAuth, async (req, res) => {
   const orgId = defined(req.session.orgId);
   const { userRole } = req.session;
-  const [locations, cartons] = await Promise.all([
+  const [locations, cartons, { sourceCodes }] = await Promise.all([
     db.execute({ sql: "SELECT id, name FROM locations WHERE active = 1 AND org_id = ? ORDER BY name", args: [orgId] }),
     db.execute({ sql: "SELECT id, name, length_cm, width_cm, height_cm, printed_length_cm, printed_width_cm, printed_height_cm, barcode, unit_cost FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId] }),
+    labelCodeOptions(orgId),
   ]);
 
   let printLabelCarton = null;
@@ -38,7 +40,8 @@ router.get("/receive", requireAuth, async (req, res) => {
     cartons: cartons.rows,
     canCreateLocation: userRole === "admin",
     canCreateCarton: userRole === "admin" || userRole === "manager",
-    componentScripts: ["barcode-scanner", "quick-create", "carton-scanner", "qty-stepper"],
+    sourceCodes,
+    componentScripts: ["barcode-scanner", "quick-create", "carton-scanner", "qty-stepper", "label-preview"],
     printLabelCarton,
     // Preselect the location last received into, for the next carton and
     // later visits.

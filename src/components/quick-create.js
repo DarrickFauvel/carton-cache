@@ -6,9 +6,11 @@
  *   </template>
  * </quick-create>
  *
- * On successful creation the server must return JSON: { id, name, label? }
+ * On successful creation the server must return JSON:
+ *   { id, name, label?, printUrl?, printLabel? }
  * The component appends a new <option> to the <select> identified by [target]
- * and selects it automatically.
+ * and selects it automatically. If printUrl is set, the dialog stays open on a
+ * "Created" step with a link to it (opened in a new tab) instead of closing.
  */
 
 class QuickCreate extends HTMLElement {
@@ -18,6 +20,8 @@ class QuickCreate extends HTMLElement {
   #form = null;
   /** @type {HTMLElement | null} */
   #errorEl = null;
+  /** @type {HTMLElement | null} */
+  #successEl = null;
 
   /**
    * Open the dialog, optionally pre-filling named fields.
@@ -26,6 +30,8 @@ class QuickCreate extends HTMLElement {
   open(prefill = {}) {
     if (!this.#dialog || !this.#form || !this.#errorEl) return;
     this.#form.reset();
+    this.#form.hidden = false;
+    if (this.#successEl) this.#successEl.hidden = true;
     // Close all <details> before re-opening so state is fresh
     for (const d of this.#form.querySelectorAll("details")) d.open = false;
     this.#errorEl.hidden = true;
@@ -100,6 +106,36 @@ class QuickCreate extends HTMLElement {
 
     form.appendChild(actionRow);
     dialog.appendChild(form);
+
+    // ── Success step (only shown when the server returns a printUrl) ────────
+    const success = document.createElement("div");
+    success.className = "stack";
+    success.hidden = true;
+
+    const successMsg = document.createElement("p");
+    successMsg.className = "alert alert--success";
+    successMsg.setAttribute("role", "status");
+    success.appendChild(successMsg);
+
+    const successActions = document.createElement("div");
+    successActions.className = "action-row action-row--end";
+
+    const doneBtn = document.createElement("button");
+    doneBtn.type = "button";
+    doneBtn.className = "btn";
+    doneBtn.textContent = "Done";
+    doneBtn.addEventListener("click", () => dialog.close());
+    successActions.appendChild(doneBtn);
+
+    const printLink = document.createElement("a");
+    printLink.className = "btn btn--primary";
+    printLink.target = "_blank";
+    printLink.addEventListener("click", () => dialog.close());
+    successActions.appendChild(printLink);
+
+    success.appendChild(successActions);
+    dialog.appendChild(success);
+    this.#successEl = success;
     document.body.appendChild(dialog);
 
     // Expose to the open() method
@@ -132,7 +168,7 @@ class QuickCreate extends HTMLElement {
           body: params.toString(),
         });
 
-        const json = /** @type {{ id?: string; name?: string; label?: string; error?: string }} */ (await res.json());
+        const json = /** @type {{ id?: string; name?: string; label?: string; printUrl?: string; printLabel?: string; error?: string }} */ (await res.json());
 
         if (!res.ok) {
           errorEl.textContent = json.error ?? "Something went wrong.";
@@ -150,6 +186,16 @@ class QuickCreate extends HTMLElement {
           select.appendChild(opt);
           opt.selected = true;
           select.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+
+        if (json.printUrl) {
+          successMsg.textContent = `Created ${json.label ?? json.name ?? ""}.`;
+          printLink.href = json.printUrl;
+          printLink.textContent = json.printLabel ?? "Print";
+          form.hidden = true;
+          success.hidden = false;
+          printLink.focus();
+          return;
         }
 
         dialog.close();

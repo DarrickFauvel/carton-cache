@@ -1480,6 +1480,10 @@ dialog[open] {
     background: rgba(0, 0, 0, 0.45);
     backdrop-filter: blur(2px);
   }
+
+  /* The form and its success step are .stack (display: flex), which would
+     otherwise override [hidden] when swapping between them. */
+  & [hidden] { display: none; }
 }
 
 .quick-create-dialog__title {
