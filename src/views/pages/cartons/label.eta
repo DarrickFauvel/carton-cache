@@ -5,18 +5,38 @@
   <title><%= it.labelCode %></title>
   <style>
     @page { size: 3.5in 1.125in; margin: 0.05in; }
-    body { margin: 0; display: flex; align-items: center; justify-content: center; height: 1.125in; font-family: monospace; }
-    .code { font-size: 28pt; font-weight: bold; }
+    body { margin: 0; font-family: monospace; }
+    /* Exactly the printable area (page minus @page margins), on screen too, so
+       the fit measured on screen matches what prints. */
+    .label { box-sizing: border-box; width: 3.4in; height: 1.025in; padding: 0 0.15in; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .code { font-size: 28pt; font-weight: bold; white-space: nowrap; line-height: 1; }
     .actions { position: fixed; bottom: 0.1in; }
     @media print { .actions { display: none; } }
   </style>
 </head>
 <body>
-  <div class="code"><%= it.labelCode %></div>
+  <div class="label"><span class="code"><%= it.labelCode %></span></div>
   <div class="actions">
     <button type="button" onclick="window.print()">Print</button>
     <a href="/cartons">Back</a>
   </div>
-  <script>window.onload = () => window.print();</script>
+  <script>
+    // Scale the code to fill the label's width (capped by its height). Text
+    // width grows linearly with font size, so one measurement is enough.
+    function fitCode() {
+      const label = document.querySelector(".label");
+      const code = document.querySelector(".code");
+      const base = 100;
+      code.style.fontSize = base + "px";
+      const style = getComputedStyle(label);
+      const width = label.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+      const scale = Math.min(width / code.offsetWidth, label.clientHeight / code.offsetHeight);
+      code.style.fontSize = Math.floor(base * scale * 0.95) + "px";
+    }
+    window.onload = () => {
+      fitCode();
+      window.print();
+    };
+  </script>
 </body>
 </html>
