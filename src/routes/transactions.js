@@ -74,6 +74,9 @@ router.get("/consume", requireAuth, async (req, res) => {
     locations: locations.rows,
     cartons: cartons.rows,
     componentScripts: ["barcode-scanner", "carton-scanner", "carton-suggest"],
+    // Consume redirects to the dashboard, so remember the location in the
+    // session (rather than the redirect URL, as Receive does) for next time.
+    selectedLocationId: req.session.lastConsumeLocationId ?? "",
   });
 });
 
@@ -88,6 +91,7 @@ router.post("/consume", requireAuth, async (req, res) => {
     userId: defined(req.session.userId),
     notes: str(notes) || undefined,
   });
+  req.session.lastConsumeLocationId = str(location_id);
   res.redirect("/");
 });
 
