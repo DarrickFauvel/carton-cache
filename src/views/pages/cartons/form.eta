@@ -133,7 +133,7 @@
                  <%= it.carton && Number(it.carton.resizable) === 1 ? 'checked' : '' %> />
           Height can be cut down
         </label>
-        <small>Carton suggestions will say how far to cut this carton down to fit the item.</small>
+        <small>Carton suggestions will say how far to cut this carton down to fit the item. Cartons over 3" inside width and height are always treated as cuttable; tick this for smaller ones.</small>
       </div>
 
       <div class="form-group">

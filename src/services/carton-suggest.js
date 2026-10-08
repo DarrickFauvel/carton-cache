@@ -43,6 +43,21 @@ function permutations([a, b, c]) {
 const MIN_CUT_CM = 1;
 
 /**
+ * Cartons wider and taller than this (inside) can always have their height
+ * cut down, whether or not they're flagged resizable.
+ */
+const CUTTABLE_OVER_CM = inToCm(3);
+
+/**
+ * @param {[number, number, number]} carton inside length, width, height
+ * @param {boolean} flagged the carton type's resizable flag
+ * @returns {boolean}
+ */
+export function canCut([, width, height], flagged) {
+  return flagged || (width > CUTTABLE_OVER_CM && height > CUTTABLE_OVER_CM);
+}
+
+/**
  * Tries every orientation of the item against a candidate carton. Fits
  * only if there's room for dunnage (packing padding) on both sides of
  * every axis — hence 2 * dunnageCm per matched dimension.
@@ -132,7 +147,7 @@ export async function suggest(args) {
     const carton = /** @type {[number, number, number]} */ ([
       Number(row.length_cm), Number(row.width_cm), Number(row.height_cm),
     ]);
-    const { fits, leftoverVolume, resizeHeight } = testFit(item, carton, dunnageCm, Number(row.resizable) === 1);
+    const { fits, leftoverVolume, resizeHeight } = testFit(item, carton, dunnageCm, canCut(carton, Number(row.resizable) === 1));
     if (!fits) continue;
     onSite.push({
       id: /** @type {string} */ (row.id),
