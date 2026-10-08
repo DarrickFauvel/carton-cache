@@ -44,7 +44,7 @@
       <select id="location_id" name="location_id" required>
         <option value="">Select location…</option>
         <% it.locations.forEach(function(loc) { %>
-        <option value="<%= loc.id %>"><%= loc.name %></option>
+        <option value="<%= loc.id %>" <%= it.selectedLocationId === loc.id ? 'selected' : '' %>><%= loc.name %></option>
         <% }) %>
       </select>
     </div>
