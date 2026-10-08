@@ -1,0 +1,119 @@
+<% layout('/layouts/base') %>
+
+<div class="page-header">
+  <h1>Transfer Several</h1>
+  <div class="action-row">
+    <a href="/transactions/transfer" class="btn btn-ghost">One carton at a time</a>
+  </div>
+</div>
+
+<% if (it.error) { %>
+<p class="alert alert--error" role="alert"><%= it.error %></p>
+<% } %>
+
+<% const conditionLabel = { new: 'New', good: 'Good', fair: 'Fair', poor: 'Poor' }; %>
+<% const fromName = (it.locations.find(function(l) { return l.id === it.values.from_location_id; }) || {}).name; %>
+
+<section class="form-card">
+  <%/* Picking "from" reloads the page with that location's stock. */%>
+  <form method="get" action="/transactions/transfer/several" class="stack" id="from-form">
+    <input type="hidden" name="to" value="<%= it.values.to_location_id %>" />
+    <div class="form-group">
+      <label for="from">From location</label>
+      <div class="input-row">
+        <select id="from" name="from" required>
+          <option value="">Select location…</option>
+          <% it.locations.forEach(function(loc) { %>
+          <option value="<%= loc.id %>" <%= it.values.from_location_id === loc.id ? 'selected' : '' %>><%= loc.name %></option>
+          <% }) %>
+        </select>
+        <noscript><button type="submit" class="btn">Show cartons</button></noscript>
+      </div>
+    </div>
+  </form>
+</section>
+
+<% if (it.values.from_location_id && it.lots.length === 0) { %>
+<div class="empty-state">
+  <p>Nothing in stock at <%= fromName || 'that location' %>.</p>
+</div>
+<% } %>
+
+<% if (it.lots.length > 0) { %>
+<section class="form-card">
+  <form method="post" action="/transactions/transfer/several" class="stack">
+    <input type="hidden" name="from_location_id" value="<%= it.values.from_location_id %>" />
+
+    <div class="form-group">
+      <label for="to_location_id">To location</label>
+      <select id="to_location_id" name="to_location_id" required>
+        <option value="">Select location…</option>
+        <% it.locations.forEach(function(loc) { if (loc.id === it.values.from_location_id) return; %>
+        <option value="<%= loc.id %>" <%= it.values.to_location_id === loc.id ? 'selected' : '' %>><%= loc.name %></option>
+        <% }) %>
+      </select>
+    </div>
+
+    <fieldset class="transfer-lots">
+      <legend>Cartons at <%= fromName %></legend>
+      <label class="transfer-lots__all checkbox-field">
+        <input type="checkbox" id="select-all" />
+        Select all
+      </label>
+      <ul class="transfer-lots__list">
+        <% it.lots.forEach(function(lot, i) { %>
+        <% const qty = it.values.qty[lot.key] != null ? it.values.qty[lot.key] : String(lot.quantity); %>
+        <li class="transfer-lot">
+          <input type="checkbox" name="lot" value="<%= lot.key %>" id="lot-<%= i %>"
+                 <%= it.values.lots.includes(lot.key) ? 'checked' : '' %> />
+          <label for="lot-<%= i %>" class="transfer-lot__name">
+            <% if (lot.label_code) { %><span class="transfer-lot__code"><%= lot.label_code %></span><% } %>
+            <span><%= lot.name %></span>
+          </label>
+          <span class="stock-chip condition--<%= lot.condition %>"><%= conditionLabel[lot.condition] %></span>
+          <span class="transfer-lot__qty">
+            <input type="number" name="qty[<%= lot.key %>]" value="<%= qty %>" min="1" max="<%= lot.quantity %>"
+                   inputmode="numeric" aria-label="Quantity of <%= lot.name %> (<%= lot.condition %>) to transfer" />
+            <small>of <%= lot.quantity %></small>
+          </span>
+        </li>
+        <% }) %>
+      </ul>
+    </fieldset>
+
+    <div class="form-group">
+      <label for="notes">Notes <small>(optional, added to each transfer)</small></label>
+      <textarea id="notes" name="notes" rows="2"><%= it.values.notes %></textarea>
+    </div>
+
+    <button type="submit" class="btn btn--primary">Transfer selected</button>
+  </form>
+</section>
+<% } %>
+
+<script>
+  (function () {
+    // Picking a "from" location loads its stock.
+    var from = document.getElementById('from');
+    from.addEventListener('change', function () { if (from.value) from.form.submit(); });
+
+    var all = document.getElementById('select-all');
+    if (!all) return;
+    var boxes = Array.prototype.slice.call(document.querySelectorAll('input[name="lot"]'));
+    function sync() {
+      var n = boxes.filter(function (b) { return b.checked; }).length;
+      all.checked = n === boxes.length;
+      all.indeterminate = n > 0 && n < boxes.length;
+    }
+    all.addEventListener('change', function () {
+      boxes.forEach(function (b) { b.checked = all.checked; });
+    });
+    boxes.forEach(function (b) { b.addEventListener('change', sync); });
+    // Editing a quantity ticks its row.
+    boxes.forEach(function (b) {
+      var qty = b.closest('li').querySelector('input[type="number"]');
+      qty.addEventListener('input', function () { b.checked = true; sync(); });
+    });
+    sync();
+  }());
+</script>

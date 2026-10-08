@@ -10,6 +10,7 @@ import { ulid, now } from "../lib/id.js";
 
 /** @typedef {import("../types.js").Condition} Condition */
 /** @typedef {import("../types.js").TransactionType} TransactionType */
+/** @typedef {import("@libsql/client").Client | import("@libsql/client").Transaction} Executor */
 
 /**
  * @typedef {object} ReceiveArgs
@@ -47,6 +48,23 @@ import { ulid, now } from "../lib/id.js";
  */
 
 /**
+ * @typedef {object} TransferLine
+ * @property {string} cartonTypeId
+ * @property {Condition} condition
+ * @property {number} quantity
+ */
+
+/**
+ * @typedef {object} TransferManyArgs
+ * @property {string} orgId
+ * @property {string} fromLocationId
+ * @property {string} toLocationId
+ * @property {TransferLine[]} lines
+ * @property {string} userId
+ * @property {string} [notes]
+ */
+
+/**
  * @typedef {object} AdjustArgs
  * @property {string} orgId
  * @property {string} locationId
@@ -66,13 +84,14 @@ import { ulid, now } from "../lib/id.js";
  * @param {number} quantity
  * @param {string} locationId
  * @param {string} userId
- * @param {{ unitCostSnapshot?: number; linkedTransactionId?: string; notes?: string }} [opts]
+ * @param {{ unitCostSnapshot?: number; linkedTransactionId?: string; notes?: string; exec?: Executor }} [opts]
+ *   exec: run inside this transaction instead of directly on the db
  * @returns {Promise<string>}
  */
 async function insertTx(orgId, type, cartonTypeId, condition, quantity, locationId, userId, opts = {}) {
   const id = ulid();
   const ts = now();
-  await db.execute({
+  await (opts.exec ?? db).execute({
     sql: `
       INSERT INTO transactions
         (id, type, carton_type_id, condition, quantity, unit_cost_snapshot,
@@ -212,11 +231,15 @@ export async function consume(args) {
 
 /** Thrown when a stock movement asks for more than the source lot holds. */
 export class InsufficientStockError extends Error {
-  /** @param {number} available */
-  constructor(available) {
+  /**
+   * @param {number} available
+   * @param {TransferLine} [line] which line of a transferMany() fell short
+   */
+  constructor(available, line) {
     super(`Only ${available} in stock.`);
     this.name = "InsufficientStockError";
     this.available = available;
+    this.line = line;
   }
 }
 
@@ -291,6 +314,64 @@ export async function transfer(args) {
   });
 
   return [outId, inId];
+}
+
+/**
+ * Transfers several lots from one location to another as a single unit:
+ * either every line moves or none does. Each line writes its own linked
+ * transfer_out/transfer_in pair, exactly as transfer() does, so history
+ * stays per carton type.
+ *
+ * Unlike transfer(), whose statements run one by one, this uses a real
+ * write transaction, since a later line failing must undo earlier ones.
+ * @param {TransferManyArgs} args
+ * @returns {Promise<void>}
+ * @throws {InsufficientStockError} with `line` set, if any source lot holds
+ *   fewer than its line asks for; nothing is moved
+ */
+export async function transferMany(args) {
+  const ts = now();
+  const tx = await db.transaction("write");
+  try {
+    for (const line of args.lines) {
+      const decremented = await tx.execute({
+        sql: `
+          UPDATE inventory_lots
+          SET quantity = quantity - ?, updated_at = ?
+          WHERE location_id = ? AND carton_type_id = ? AND condition = ? AND org_id = ? AND quantity >= ?
+        `,
+        args: [line.quantity, ts, args.fromLocationId, line.cartonTypeId, line.condition, args.orgId, line.quantity],
+      });
+      if (decremented.rowsAffected === 0) {
+        const current = await tx.execute({
+          sql: "SELECT quantity FROM inventory_lots WHERE location_id = ? AND carton_type_id = ? AND condition = ? AND org_id = ?",
+          args: [args.fromLocationId, line.cartonTypeId, line.condition, args.orgId],
+        });
+        throw new InsufficientStockError(Number(current.rows[0]?.quantity ?? 0), line);
+      }
+
+      const opts = { notes: args.notes, exec: tx };
+      const outId = await insertTx(args.orgId, "transfer_out", line.cartonTypeId, line.condition, line.quantity, args.fromLocationId, args.userId, opts);
+      const inId = await insertTx(args.orgId, "transfer_in", line.cartonTypeId, line.condition, line.quantity, args.toLocationId, args.userId, { ...opts, linkedTransactionId: outId });
+      await tx.execute({ sql: "UPDATE transactions SET linked_transaction_id = ? WHERE id = ?", args: [inId, outId] });
+
+      await tx.execute({
+        sql: `
+          INSERT INTO inventory_lots (id, location_id, carton_type_id, condition, quantity, updated_at, org_id)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT (location_id, carton_type_id, condition)
+          DO UPDATE SET quantity = quantity + ?, updated_at = ?
+        `,
+        args: [ulid(), args.toLocationId, line.cartonTypeId, line.condition, line.quantity, ts, args.orgId, line.quantity, ts],
+      });
+    }
+    await tx.commit();
+  } catch (err) {
+    await tx.rollback();
+    throw err;
+  } finally {
+    tx.close();
+  }
 }
 
 /**

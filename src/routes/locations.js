@@ -119,6 +119,8 @@ async function renderDetail(req, res, id, error = null) {
     moveTargets: location.parent_id == null ? [] : await parentOptions(orgId, /** @type {string} */ (location.parent_id)),
     saved: req.query.saved === "1",
     moved: req.query.moved === "1",
+    // From Transfer Several: how many cartons landed here.
+    transferred: Math.max(0, Math.floor(Number(req.query.transferred)) || 0),
     error,
   });
 }
