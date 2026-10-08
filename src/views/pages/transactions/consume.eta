@@ -26,7 +26,7 @@
     <div class="form-group">
       <label for="location_id">Take from</label>
       <select id="location_id" name="location_id" required>
-        <option value="">Select location…</option>
+        <option value=""><%= it.locations.length ? 'Select location…' : 'No locations have stock' %></option>
         <% it.locations.forEach(function(loc) { %>
         <option value="<%= loc.id %>" <%= it.values.location_id === loc.id ? 'selected' : '' %>><%= loc.name %></option>
         <% }) %>
@@ -39,7 +39,7 @@
         <select id="carton_type_id" name="carton_type_id" required>
           <option value="">Select or scan carton…</option>
           <% it.cartons.forEach(function(c) { %>
-          <option value="<%= c.id %>" <%= it.values.carton_type_id === c.id ? 'selected' : '' %>><%= it.cartonLabel(c) %></option>
+          <option value="<%= c.id %>" data-stock="<%= c.stock || '' %>" <%= it.values.carton_type_id === c.id ? 'selected' : '' %>><%= it.cartonLabel(c) %></option>
           <% }) %>
         </select>
         <carton-scanner
@@ -52,6 +52,7 @@
           </barcode-scanner>
         </carton-scanner>
       </div>
+      <location-stock-filter location="location_id" target="carton_type_id" condition-choice="condition" quantity="quantity"></location-stock-filter>
     </div>
 
     <div class="form-group">
@@ -72,6 +73,7 @@
         <button type="button" class="qty-stepper__btn" data-step="1" aria-label="Increase quantity by 1">+</button>
         <button type="button" class="qty-stepper__btn" data-step="10" aria-label="Increase quantity by 10">+10</button>
       </qty-stepper>
+      <small id="quantity_available" hidden></small>
     </div>
 
     <div class="form-group">
