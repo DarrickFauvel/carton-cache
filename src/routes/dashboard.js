@@ -3,6 +3,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { db } from "../db/client.js";
 import { defined } from "../lib/id.js";
 import { buildLabelCode } from "../lib/labels.js";
+import { cmToIn } from "../lib/units.js";
 import { LOCATION_ACTIVE_SQL, LOCATION_LABEL_SQL, PARENT_JOIN_SQL } from "../lib/locations.js";
 
 /** @typedef {import("../types.js").Condition} Condition */
@@ -164,16 +165,22 @@ router.get("/", requireAuth, async (req, res) => {
   }
 
   const dir = sort === "desc" ? -1 : 1;
+  /** @param {number[]} a @param {number[]} b */
+  const byDims = (a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
   /**
    * By length, then width, then height, smallest first (or largest first for
    * "desc"); cartons with no size last either way. Ties go by name.
+   * Compares the whole inches shown in label codes first, so the order matches
+   * what's on screen (a 9.75" and a 9.5" carton both read "10x…"), then the
+   * exact size.
    * @param {StockRow} a
    * @param {StockRow} b
    */
   const bySize = (a, b) => {
     if (!a.size_cm || !b.size_cm) return (a.size_cm ? -1 : b.size_cm ? 1 : 0) || a.name.localeCompare(b.name);
-    const [al, aw, ah] = a.size_cm, [bl, bw, bh] = b.size_cm;
-    return dir * (al - bl || aw - bw || ah - bh) || a.name.localeCompare(b.name);
+    /** @param {number[]} cm */
+    const wholeIn = (cm) => cm.map((d) => Math.round(cmToIn(d)));
+    return dir * (byDims(wholeIn(a.size_cm), wholeIn(b.size_cm)) || byDims(a.size_cm, b.size_cm)) || a.name.localeCompare(b.name);
   };
   for (const row of rows.values()) {
     row.conditions = CONDITIONS.filter((c) => row.byCondition.has(c)).map((c) => ({
