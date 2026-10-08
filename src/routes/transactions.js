@@ -136,12 +136,13 @@ async function renderTransfer(req, res, { error = null, values = {} } = {}) {
     locations: locations.rows,
     cartons: cartons.rows,
     error,
-    // A re-render after a failed POST passes the submitted from location in
-    // `values`, which wins over the one remembered from the last transfer.
+    // A re-render after a failed POST passes the submitted locations in
+    // `values`, which win over the ones remembered from the last transfer.
     values: {
       condition: "good",
       quantity: "1",
       from_location_id: req.session.lastTransferFromLocationId ?? "",
+      to_location_id: req.session.lastTransferToLocationId ?? "",
       ...values,
     },
     componentScripts: ["location-stock-filter"],
@@ -204,6 +205,7 @@ router.post("/transfer", requireAuth, async (req, res) => {
     throw err;
   }
   req.session.lastTransferFromLocationId = values.from_location_id;
+  req.session.lastTransferToLocationId = values.to_location_id;
   res.redirect("/");
 });
 
