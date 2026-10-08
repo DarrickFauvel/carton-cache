@@ -46,6 +46,36 @@ function parseCartonBody(body) {
 }
 
 /**
+ * Distinct label source/size codes already used in the org, offered as
+ * suggestions on the carton form (new codes can still be typed freely).
+ * @param {string} orgId
+ * @returns {Promise<{ sourceCodes: string[]; sizeCodes: string[] }>}
+ */
+async function labelCodeOptions(orgId) {
+  const [sources, sizes] = await Promise.all([
+    db.execute({ sql: "SELECT DISTINCT source_code AS code FROM carton_types WHERE org_id = ? AND source_code IS NOT NULL ORDER BY code", args: [orgId] }),
+    db.execute({ sql: "SELECT DISTINCT size_code AS code FROM carton_types WHERE org_id = ? AND size_code IS NOT NULL ORDER BY code", args: [orgId] }),
+  ]);
+  return {
+    sourceCodes: sources.rows.map((r) => String(r.code)),
+    sizeCodes:   sizes.rows.map((r) => String(r.code)),
+  };
+}
+
+/**
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @param {{ title: string; carton: unknown; error: string | null }} data
+ */
+async function renderForm(req, res, data) {
+  res.render("pages/cartons/form", {
+    ...data,
+    ...(await labelCodeOptions(defined(req.session.orgId))),
+    componentScripts: FORM_SCRIPTS,
+  });
+}
+
+/**
  * @param {Record<string, unknown>[]} rows
  * @returns {(Record<string, unknown> & { label_code: string | null })[]}
  */
@@ -102,12 +132,11 @@ router.get("/", requireAuth, async (req, res) => {
   });
 });
 
-router.get("/new", requireRole("admin", "manager"), (_req, res) => {
-  res.render("pages/cartons/form", {
+router.get("/new", requireRole("admin", "manager"), async (req, res) => {
+  await renderForm(req, res, {
     title: "New Carton Type",
     carton: null,
     error: null,
-    componentScripts: FORM_SCRIPTS,
   });
 });
 
@@ -117,11 +146,10 @@ router.post("/", requireRole("admin", "manager"), async (req, res) => {
 
   if (!fields.name) {
     if (wantsJson) return res.status(400).json({ error: "Name is required." });
-    return res.render("pages/cartons/form", {
+    return renderForm(req, res, {
       title: "New Carton Type",
       carton: req.body,
       error: "Name is required.",
-      componentScripts: FORM_SCRIPTS,
     });
   }
 
@@ -138,11 +166,10 @@ router.post("/", requireRole("admin", "manager"), async (req, res) => {
   } catch (err) {
     const error = constraintMessage(err) ?? "Could not save carton type. Please try again.";
     if (wantsJson) return res.status(409).json({ error });
-    return res.render("pages/cartons/form", {
+    return renderForm(req, res, {
       title: "New Carton Type",
       carton: req.body,
       error,
-      componentScripts: FORM_SCRIPTS,
     });
   }
 
@@ -156,11 +183,13 @@ router.get("/:id/edit", requireRole("admin", "manager"), async (req, res) => {
     args: [str(req.params.id), defined(req.session.orgId)],
   });
   if (!result.rows[0]) return res.redirect("/cartons");
-  res.render("pages/cartons/form", {
+  await renderForm(req, res, {
     title: "Edit Carton Type",
-    carton: result.rows[0],
+    // Spread into a plain object: libsql rows are array-like, and their
+    // non-enumerable `length` (the column count) would otherwise be read by
+    // the form as the submitted `length` dimension.
+    carton: { ...result.rows[0] },
     error: null,
-    componentScripts: FORM_SCRIPTS,
   });
 });
 
@@ -170,11 +199,10 @@ router.post("/:id/edit", requireRole("admin", "manager"), async (req, res) => {
   const fields = parseCartonBody(req.body);
   if (!fields.name) {
     const result = await db.execute({ sql: "SELECT * FROM carton_types WHERE id = ? AND org_id = ?", args: [id, orgId] });
-    return res.render("pages/cartons/form", {
+    return renderForm(req, res, {
       title: "Edit Carton Type",
       carton: { ...result.rows[0], ...req.body },
       error: "Name is required.",
-      componentScripts: FORM_SCRIPTS,
     });
   }
   try {
@@ -187,11 +215,10 @@ router.post("/:id/edit", requireRole("admin", "manager"), async (req, res) => {
     });
   } catch (err) {
     const result = await db.execute({ sql: "SELECT * FROM carton_types WHERE id = ? AND org_id = ?", args: [id, orgId] });
-    return res.render("pages/cartons/form", {
+    return renderForm(req, res, {
       title: "Edit Carton Type",
       carton: { ...result.rows[0], ...req.body },
       error: constraintMessage(err) ?? "Could not save changes. Please try again.",
-      componentScripts: FORM_SCRIPTS,
     });
   }
   res.redirect("/cartons?saved=1");
