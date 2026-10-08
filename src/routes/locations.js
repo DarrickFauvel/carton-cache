@@ -150,6 +150,9 @@ router.post("/:id/edit", requireRole("admin"), async (req, res) => {
     });
   };
 
+  const exists = await db.execute({ sql: "SELECT 1 FROM locations WHERE id = ? AND org_id = ?", args: [id, orgId] });
+  if (exists.rows.length === 0) return res.redirect("/locations");
+
   if (!name) return fail("Name is required.");
   const parentError = await checkParent(orgId, id, parentId);
   if (parentError) return fail(parentError);

@@ -90,14 +90,19 @@ export async function checkParent(orgId, locationId, parentId) {
 }
 
 /**
- * Turns a UNIQUE failure on the location name into a message.
+ * Turns a failed location save into a message: UNIQUE failures on the name
+ * get a specific one; anything else is logged and gets a generic one.
  * @param {unknown} err
  * @param {boolean} hasParent
  * @returns {string}
  */
 export function locationSaveError(err, hasParent) {
   const msg = err instanceof Error ? err.message : String(err);
-  if (!msg.includes("UNIQUE")) return "Could not save location.";
+  if (!msg.includes("UNIQUE")) {
+    // Not the user's fault, so the form only says it failed; log the cause.
+    console.error("Saving location failed:", err);
+    return "Could not save location.";
+  }
   return hasParent
     ? "That location already has a sublocation with that name."
     : "A location with that name already exists.";
