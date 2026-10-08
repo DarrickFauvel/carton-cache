@@ -1,7 +1,12 @@
 <% layout('/layouts/base') %>
 
 <div class="page-header">
-  <h1><%= it.location.name %></h1>
+  <div>
+    <% if (it.location.parent_id) { %>
+    <p class="location-crumb"><a href="/locations/<%= it.location.parent_id %>"><%= it.location.parent_name %></a> ›</p>
+    <% } %>
+    <h1><%= it.location.name %></h1>
+  </div>
   <div class="action-row">
     <a href="/transactions/receive" class="btn btn--primary">+ Receive</a>
     <% if (it.user && it.user.role === 'admin') { %>
@@ -10,9 +15,62 @@
   </div>
 </div>
 
+<% if (it.saved) { %>
+<p class="alert alert--success" role="status">Saved.</p>
+<% } %>
+<% if (it.moved) { %>
+<p class="alert alert--success" role="status">Moved to <%= it.location.parent_name %>, with all its stock.</p>
+<% } %>
+<% if (it.error) { %>
+<p class="alert alert--error" role="alert"><%= it.error %></p>
+<% } %>
+
+<% const canManage = it.user && (it.user.role === 'admin' || it.user.role === 'manager'); %>
+
+<% if (!it.location.parent_id) { %>
+<section class="sublocations">
+  <div class="sublocations__header">
+    <h2>Sublocations</h2>
+    <% if (it.user && it.user.role === 'admin') { %>
+    <a href="/locations/new?parent=<%= it.location.id %>" class="btn btn-ghost">+ Add sublocation</a>
+    <% } %>
+  </div>
+  <% if (it.children.length === 0) { %>
+  <p class="sublocations__empty">None yet. Add a stack, shelf or bin here to track stock in it separately.</p>
+  <% } else { %>
+  <ul class="sublocations__list">
+    <% it.children.forEach(function(c) { %>
+    <li>
+      <a href="/locations/<%= c.id %>"><%= c.name %></a>
+      <% if (!c.active) { %><small class="badge">Inactive</small><% } %>
+      <span class="sublocations__total"><%= c.total %></span>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>
+<% } else if (canManage && it.moveTargets.length > 0) { %>
+<details class="form-card move-location"<%= it.error ? ' open' : '' %>>
+  <summary>Move <%= it.location.name %> to another location</summary>
+  <form method="post" action="/locations/<%= it.location.id %>/move" class="stack">
+    <div class="form-group">
+      <label for="move_parent_id">Move to</label>
+      <select id="move_parent_id" name="parent_id" required>
+        <option value="">Select location…</option>
+        <% it.moveTargets.forEach(function(p) { %>
+        <option value="<%= p.id %>"><%= p.name %><%= p.active ? '' : ' (inactive)' %></option>
+        <% }) %>
+      </select>
+      <small>Everything on it moves too. No stock is received or consumed.</small>
+    </div>
+    <button type="submit" class="btn btn--primary">Move</button>
+  </form>
+</details>
+<% } %>
+
 <% if (it.lots.length === 0) { %>
 <div class="empty-state">
-  <p>No stock at this location.</p>
+  <p>No stock<%= it.location.parent_id ? ' here' : ' directly at this location' %>.</p>
   <a href="/transactions/receive" class="btn btn--primary">Receive cartons</a>
 </div>
 <% } else { %>

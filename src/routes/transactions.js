@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { db } from "../db/client.js";
+import { LOCATION_ACTIVE_SQL, LOCATION_LABEL_SQL, LOCATION_ORDER_SQL, PARENT_JOIN_SQL, locationOptions } from "../lib/locations.js";
 import * as inventory from "../services/inventory.js";
 import { str, defined } from "../lib/id.js";
 import { buildLabelCode } from "../lib/labels.js";
@@ -17,7 +18,7 @@ router.get("/receive", requireAuth, async (req, res) => {
   const orgId = defined(req.session.orgId);
   const { userRole } = req.session;
   const [locations, cartons, { sourceCodes }] = await Promise.all([
-    db.execute({ sql: "SELECT id, name FROM locations WHERE active = 1 AND org_id = ? ORDER BY name", args: [orgId] }),
+    locationOptions(orgId),
     db.execute({ sql: "SELECT id, name, length_cm, width_cm, height_cm, printed_length_cm, printed_width_cm, printed_height_cm, barcode, unit_cost FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId] }),
     labelCodeOptions(orgId),
   ]);
@@ -36,7 +37,7 @@ router.get("/receive", requireAuth, async (req, res) => {
 
   res.render("pages/transactions/receive", {
     title: "Receive Stock",
-    locations: locations.rows,
+    locations,
     cartons: cartons.rows,
     canCreateLocation: userRole === "admin",
     canCreateCarton: userRole === "admin" || userRole === "manager",
@@ -89,13 +90,13 @@ async function renderConsume(req, res, { error = null, values = {} } = {}) {
   const [locations, cartons] = await Promise.all([
     // Only locations holding some stock: there's nothing to consume elsewhere.
     db.execute({
-      sql: `SELECT l.id, l.name FROM locations l
-             WHERE l.active = 1 AND l.org_id = ?
+      sql: `SELECT l.id, ${LOCATION_LABEL_SQL} AS name FROM locations l ${PARENT_JOIN_SQL}
+             WHERE ${LOCATION_ACTIVE_SQL} AND l.org_id = ?
                AND EXISTS (SELECT 1 FROM inventory_lots il
                             WHERE il.location_id = l.id AND il.org_id = l.org_id AND il.quantity > 0)
-             ORDER BY l.name`,
+             ORDER BY ${LOCATION_ORDER_SQL}`,
       args: [orgId],
-    }),
+    }).then((r) => r.rows),
     // stock: as on Transfer, so the page can limit the list to types in
     // stock at the chosen location.
     db.execute({
@@ -110,7 +111,7 @@ async function renderConsume(req, res, { error = null, values = {} } = {}) {
   ]);
   res.status(error ? 422 : 200).render("pages/transactions/consume", {
     title: "Consume Stock",
-    locations: locations.rows,
+    locations,
     cartons: cartons.rows,
     componentScripts: ["barcode-scanner", "carton-scanner", "carton-suggest", "location-stock-filter", "qty-stepper"],
     error,
@@ -192,7 +193,7 @@ router.post("/consume", requireAuth, async (req, res) => {
 async function renderTransfer(req, res, { error = null, values = {} } = {}) {
   const orgId = defined(req.session.orgId);
   const [locations, cartons] = await Promise.all([
-    db.execute({ sql: "SELECT id, name FROM locations WHERE active = 1 AND org_id = ? ORDER BY name", args: [orgId] }),
+    locationOptions(orgId),
     // stock: space-separated "location_id:condition:quantity" entries for each
     // lot holding this type, so the page can filter the list by the chosen
     // "from" location and condition and cap the quantity.
@@ -208,7 +209,7 @@ async function renderTransfer(req, res, { error = null, values = {} } = {}) {
   ]);
   res.status(error ? 422 : 200).render("pages/transactions/transfer", {
     title: "Transfer Stock",
-    locations: locations.rows,
+    locations,
     cartons: cartons.rows,
     error,
     // A re-render after a failed POST passes the submitted locations in
@@ -289,12 +290,12 @@ router.post("/transfer", requireAuth, async (req, res) => {
 router.get("/adjust", requireRole("admin", "manager"), async (req, res) => {
   const orgId = defined(req.session.orgId);
   const [locations, cartons] = await Promise.all([
-    db.execute({ sql: "SELECT id, name FROM locations WHERE active = 1 AND org_id = ? ORDER BY name", args: [orgId] }),
+    locationOptions(orgId),
     db.execute({ sql: "SELECT id, name, length_cm, width_cm, height_cm, printed_length_cm, printed_width_cm, printed_height_cm FROM carton_types WHERE org_id = ? AND archived_at IS NULL ORDER BY name", args: [orgId] }),
   ]);
   res.render("pages/transactions/adjust", {
     title: "Adjust Stock",
-    locations: locations.rows,
+    locations,
     cartons: cartons.rows,
     componentScripts: ["qty-stepper"],
   });
@@ -321,10 +322,11 @@ router.get("/", requireAuth, async (req, res) => {
   const { location, type, carton, from, to } = req.query;
 
   let sql = `
-    SELECT t.*, ct.name AS carton_name, l.name AS location_name, u.name AS user_name
+    SELECT t.*, ct.name AS carton_name, ${LOCATION_LABEL_SQL} AS location_name, u.name AS user_name
     FROM transactions t
     JOIN carton_types ct ON ct.id = t.carton_type_id
     JOIN locations l ON l.id = t.location_id
+    ${PARENT_JOIN_SQL}
     JOIN users u ON u.id = t.user_id
     WHERE t.org_id = ?
   `;
@@ -341,14 +343,14 @@ router.get("/", requireAuth, async (req, res) => {
 
   const [txResult, locations, cartons] = await Promise.all([
     db.execute({ sql, args }),
-    db.execute({ sql: "SELECT id, name FROM locations WHERE org_id = ? ORDER BY name", args: [orgId] }),
+    locationOptions(orgId, { includeInactive: true }),
     db.execute({ sql: "SELECT id, name FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId] }),
   ]);
 
   res.render("pages/transactions/history", {
     title: "Transaction History",
     transactions: txResult.rows,
-    locations: locations.rows,
+    locations,
     cartons: cartons.rows,
     filters: { location, type, carton, from, to },
   });

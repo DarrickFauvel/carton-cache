@@ -1130,6 +1130,12 @@ qty-stepper {
   container-name: location;
 }
 
+/* A sublocation's section follows its parent's, indented. */
+.location-block--sub {
+  padding-inline-start: var(--space-4);
+  border-inline-start: 2px solid var(--color-border);
+}
+
 .location-title {
   margin-bottom: var(--space-4);
   color: var(--color-text-muted);
@@ -1137,6 +1143,84 @@ qty-stepper {
   letter-spacing: 0.05em;
   font-size: 0.8rem;
   font-weight: 700;
+}
+
+/* ── Sublocations (stacks, shelves, bins inside a location) ─────────────── */
+.location-row--sub td:first-child { padding-inline-start: var(--space-8); }
+.location-row__in { margin-inline-end: var(--space-1); color: var(--color-text-muted); }
+
+/* "Office ›" above a sublocation's page title. */
+.location-crumb {
+  margin: 0 0 var(--space-1);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+
+  & a { color: inherit; }
+}
+
+.sublocations {
+  margin-bottom: var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.sublocations__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+
+  & h2 {
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+  }
+}
+
+.sublocations__empty {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.sublocations__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  & li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+
+    &:last-child { border-bottom: none; }
+  }
+
+  & a { font-weight: 600; }
+}
+
+.sublocations__total {
+  margin-inline-start: auto;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-primary);
+}
+
+.move-location {
+  margin-bottom: var(--space-6);
+
+  & summary { cursor: pointer; font-weight: 600; }
+  &[open] summary { margin-bottom: var(--space-4); }
 }
 
 /* ── Dashboard stock list ─────────────────────────────────────────────────── */

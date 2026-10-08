@@ -31,8 +31,16 @@
     </thead>
     <tbody>
       <% it.locations.forEach(function(loc) { %>
-      <tr>
-        <td data-label="Name"><a href="/locations/<%= loc.id %>"><strong><%= loc.name %></strong></a></td>
+      <tr<%= loc.parent_id ? ' class="location-row--sub"' : '' %>>
+        <td data-label="Name">
+          <% if (loc.parent_id) { %>
+          <span class="location-row__in" aria-hidden="true">↳</span>
+          <a href="/locations/<%= loc.id %>"><%= loc.name %></a>
+          <span class="sr-only">(in <%= loc.parent_name %>)</span>
+          <% } else { %>
+          <a href="/locations/<%= loc.id %>"><strong><%= loc.name %></strong></a>
+          <% } %>
+        </td>
         <td data-label="Address"><%= loc.address || '—' %></td>
         <td data-label="Status"><%= loc.active ? 'Active' : 'Inactive' %></td>
         <td class="table-cell--actions">

@@ -51,7 +51,7 @@
 <% } %>
 
 <% it.locations.forEach(function(loc) { %>
-<section class="location-block">
+<section class="location-block<%= loc.sub ? ' location-block--sub' : '' %>">
   <h2 class="location-title"><%= loc.name %></h2>
   <ul class="stock-list">
     <% loc.rows.forEach(function(row) { %>

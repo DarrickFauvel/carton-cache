@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import { db } from "../db/client.js";
+import { LOCATION_LABEL_SQL, LOCATION_ORDER_SQL, PARENT_JOIN_SQL } from "../lib/locations.js";
 import { defined } from "../lib/id.js";
 
 const router = Router();
@@ -80,12 +81,13 @@ router.get("/", requireAuth, async (req, res) => {
 // CSV export of current stock snapshot
 router.get("/snapshot.csv", requireAuth, async (req, res) => {
   const result = await db.execute({
-    sql: `SELECT l.name AS location, ct.name AS carton, ct.sku, il.condition, il.quantity
+    sql: `SELECT ${LOCATION_LABEL_SQL} AS location, ct.name AS carton, ct.sku, il.condition, il.quantity
           FROM inventory_lots il
           JOIN carton_types ct ON ct.id = il.carton_type_id
           JOIN locations l ON l.id = il.location_id
+          ${PARENT_JOIN_SQL}
           WHERE il.org_id = ?
-          ORDER BY l.name, ct.name, il.condition`,
+          ORDER BY ${LOCATION_ORDER_SQL}, ct.name, il.condition`,
     args: [defined(req.session.orgId)],
   });
 

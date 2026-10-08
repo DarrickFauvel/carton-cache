@@ -3,6 +3,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { db } from "../db/client.js";
 import { defined } from "../lib/id.js";
 import { buildLabelCode } from "../lib/labels.js";
+import { LOCATION_ACTIVE_SQL, LOCATION_LABEL_SQL, PARENT_JOIN_SQL } from "../lib/locations.js";
 
 /** @typedef {import("../types.js").Condition} Condition */
 /** @typedef {import("../types.js").CartonType} CartonType */
@@ -37,7 +38,10 @@ const CONDITIONS = ["new", "good", "fair", "poor"];
 
 /**
  * @typedef {object} StockLocation
- * @property {string} name
+ * @property {string} name "Office" or, for a sublocation, "Office › Stack 1"
+ * @property {boolean} sub a sublocation, listed right after its parent
+ * @property {string} sortKey parent's name (or its own), so sublocations follow their parent
+ * @property {string} ownName
  * @property {StockRow[]} rows by label source, then size (see byLabelThenSize)
  */
 
@@ -52,10 +56,12 @@ router.get("/", requireAuth, async (req, res) => {
         SELECT il.location_id, il.carton_type_id, il.condition, il.quantity,
                ct.name, ct.length_cm, ct.width_cm, ct.height_cm,
                ct.printed_length_cm, ct.printed_width_cm, ct.printed_height_cm, ct.source_code,
-               l.name AS location_name
+               ${LOCATION_LABEL_SQL} AS location_name, l.name AS own_name,
+               COALESCE(p.name, l.name) AS sort_key, l.parent_id IS NOT NULL AS sub
         FROM inventory_lots il
         JOIN carton_types ct ON ct.id = il.carton_type_id
         JOIN locations l ON l.id = il.location_id
+        ${PARENT_JOIN_SQL}
         WHERE il.quantity > 0 AND il.org_id = ?
       `,
       args: [orgId],
@@ -67,11 +73,13 @@ router.get("/", requireAuth, async (req, res) => {
         SELECT at.location_id, at.carton_type_id, at.condition, at.min_quantity,
                ct.name, ct.length_cm, ct.width_cm, ct.height_cm,
                ct.printed_length_cm, ct.printed_width_cm, ct.printed_height_cm, ct.source_code,
-               l.name AS location_name
+               ${LOCATION_LABEL_SQL} AS location_name, l.name AS own_name,
+               COALESCE(p.name, l.name) AS sort_key, l.parent_id IS NOT NULL AS sub
         FROM alert_thresholds at
         JOIN carton_types ct ON ct.id = at.carton_type_id AND ct.archived_at IS NULL
-        JOIN locations l ON l.id = at.location_id AND l.active = 1
-        WHERE at.org_id = ?
+        JOIN locations l ON l.id = at.location_id
+        ${PARENT_JOIN_SQL}
+        WHERE at.org_id = ? AND ${LOCATION_ACTIVE_SQL}
       `,
       args: [orgId],
     }),
@@ -107,7 +115,13 @@ router.get("/", requireAuth, async (req, res) => {
       rows.set(key, row);
       let location = locations.get(locationId);
       if (!location) {
-        location = { name: String(r.location_name), rows: [] };
+        location = {
+          name: String(r.location_name),
+          sub: Number(r.sub) === 1,
+          sortKey: String(r.sort_key),
+          ownName: String(r.own_name),
+          rows: [],
+        };
         locations.set(locationId, location);
       }
       location.rows.push(row);
@@ -164,7 +178,9 @@ router.get("/", requireAuth, async (req, res) => {
       quantity: /** @type {number} */ (row.byCondition.get(c)),
     }));
   }
-  const sortedLocations = [...locations.values()].sort((a, b) => a.name.localeCompare(b.name));
+  const sortedLocations = [...locations.values()].sort(
+    (a, b) => a.sortKey.localeCompare(b.sortKey) || Number(a.sub) - Number(b.sub) || a.ownName.localeCompare(b.ownName),
+  );
   for (const location of sortedLocations) {
     location.rows.sort(byLabelThenSize);
   }
