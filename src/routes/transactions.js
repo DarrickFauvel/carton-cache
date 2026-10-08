@@ -87,14 +87,32 @@ const CONDITIONS = ["new", "good", "fair", "poor"];
 async function renderConsume(req, res, { error = null, values = {} } = {}) {
   const orgId = defined(req.session.orgId);
   const [locations, cartons] = await Promise.all([
-    db.execute({ sql: "SELECT id, name FROM locations WHERE active = 1 AND org_id = ? ORDER BY name", args: [orgId] }),
-    db.execute({ sql: "SELECT id, name, length_cm, width_cm, height_cm, printed_length_cm, printed_width_cm, printed_height_cm, barcode FROM carton_types WHERE org_id = ? AND archived_at IS NULL ORDER BY name", args: [orgId] }),
+    // Only locations holding some stock: there's nothing to consume elsewhere.
+    db.execute({
+      sql: `SELECT l.id, l.name FROM locations l
+             WHERE l.active = 1 AND l.org_id = ?
+               AND EXISTS (SELECT 1 FROM inventory_lots il
+                            WHERE il.location_id = l.id AND il.org_id = l.org_id AND il.quantity > 0)
+             ORDER BY l.name`,
+      args: [orgId],
+    }),
+    // stock: as on Transfer, so the page can limit the list to types in
+    // stock at the chosen location.
+    db.execute({
+      sql: `SELECT ct.id, ct.name, ct.length_cm, ct.width_cm, ct.height_cm,
+                   ct.printed_length_cm, ct.printed_width_cm, ct.printed_height_cm, ct.barcode,
+                   (SELECT group_concat(il.location_id || ':' || il.condition || ':' || il.quantity, ' ')
+                      FROM inventory_lots il
+                     WHERE il.carton_type_id = ct.id AND il.org_id = ct.org_id AND il.quantity > 0) AS stock
+            FROM carton_types ct WHERE ct.org_id = ? AND ct.archived_at IS NULL ORDER BY ct.name`,
+      args: [orgId],
+    }),
   ]);
   res.status(error ? 422 : 200).render("pages/transactions/consume", {
     title: "Consume Stock",
     locations: locations.rows,
     cartons: cartons.rows,
-    componentScripts: ["barcode-scanner", "carton-scanner", "carton-suggest", "qty-stepper"],
+    componentScripts: ["barcode-scanner", "carton-scanner", "carton-suggest", "location-stock-filter", "qty-stepper"],
     error,
     // Preselect the location last consumed from (see Receive), unless a
     // re-render after a failed POST passes the submitted values.
