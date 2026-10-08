@@ -1140,7 +1140,7 @@ qty-stepper {
 }
 
 /* ── Dashboard stock list ─────────────────────────────────────────────────── */
-/* One row per carton type at a location: size and name, a chip per condition
+/* One row per carton type at a location: label code (or size) and name, a chip per condition
    in stock, and the total. Smallest carton first (sorted by the route). */
 .stock-list {
   list-style: none;
@@ -1190,14 +1190,17 @@ qty-stepper {
   min-width: 0;
 }
 
-.stock-row__dims {
+/* The row's lead: the label code printed on the box, else the size. */
+.stock-row__lead {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 
   & small { font-weight: 400; color: var(--color-text-muted); }
-  &.stock-row__dims--none { font-weight: 400; color: var(--color-text-muted); }
+  &.stock-row__lead--none { font-weight: 400; color: var(--color-text-muted); }
 }
+
+.stock-row__label { font-family: var(--font-mono); }
 
 .stock-row__name {
   font-size: 0.9rem;

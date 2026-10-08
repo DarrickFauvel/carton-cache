@@ -56,11 +56,14 @@
   <ul class="stock-list">
     <% loc.rows.forEach(function(row) { %>
     <li class="stock-row<%= row.low ? ' stock-row--low' : '' %>" id="<%= row.id %>">
+      <% const hasDims = row.length_cm != null && row.width_cm != null && row.height_cm != null; %>
       <div class="stock-row__main">
-        <% if (row.length_cm != null && row.width_cm != null && row.height_cm != null) { %>
-        <span class="stock-row__dims"><%= it.toUnit(row.length_cm) %><span class="dim-x">×</span><%= it.toUnit(row.width_cm) %><span class="dim-x">×</span><%= it.toUnit(row.height_cm) %> <small><%= it.unit %></small></span>
+        <% if (row.label_code) { %>
+        <span class="stock-row__lead stock-row__label"><%= row.label_code %></span>
+        <% } else if (hasDims) { %>
+        <span class="stock-row__lead"><%= it.toUnit(row.length_cm) %><span class="dim-x">×</span><%= it.toUnit(row.width_cm) %><span class="dim-x">×</span><%= it.toUnit(row.height_cm) %> <small><%= it.unit %></small></span>
         <% } else { %>
-        <span class="stock-row__dims stock-row__dims--none">No size</span>
+        <span class="stock-row__lead stock-row__lead--none">No size</span>
         <% } %>
         <span class="stock-row__name"><%= row.name %><% if (row.low) { %> <small class="stock-row__flag">Low</small><% } %></span>
       </div>

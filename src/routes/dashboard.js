@@ -2,8 +2,10 @@ import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import { db } from "../db/client.js";
 import { defined } from "../lib/id.js";
+import { buildLabelCode } from "../lib/labels.js";
 
 /** @typedef {import("../types.js").Condition} Condition */
+/** @typedef {import("../types.js").CartonType} CartonType */
 
 /** @type {readonly Condition[]} */
 const CONDITIONS = ["new", "good", "fair", "poor"];
@@ -14,6 +16,7 @@ const CONDITIONS = ["new", "good", "fair", "poor"];
  * @property {string} id anchor id, unique per location + carton type
  * @property {string} carton_type_id
  * @property {string} name
+ * @property {string | null} label_code see buildLabelCode(); leads the row when set
  * @property {number | null} length_cm
  * @property {number | null} width_cm
  * @property {number | null} height_cm
@@ -48,6 +51,7 @@ router.get("/", requireAuth, async (req, res) => {
       sql: `
         SELECT il.location_id, il.carton_type_id, il.condition, il.quantity,
                ct.name, ct.length_cm, ct.width_cm, ct.height_cm,
+               ct.printed_length_cm, ct.printed_width_cm, ct.printed_height_cm, ct.source_code,
                l.name AS location_name
         FROM inventory_lots il
         JOIN carton_types ct ON ct.id = il.carton_type_id
@@ -62,6 +66,7 @@ router.get("/", requireAuth, async (req, res) => {
       sql: `
         SELECT at.location_id, at.carton_type_id, at.condition, at.min_quantity,
                ct.name, ct.length_cm, ct.width_cm, ct.height_cm,
+               ct.printed_length_cm, ct.printed_width_cm, ct.printed_height_cm, ct.source_code,
                l.name AS location_name
         FROM alert_thresholds at
         JOIN carton_types ct ON ct.id = at.carton_type_id AND ct.archived_at IS NULL
@@ -90,6 +95,7 @@ router.get("/", requireAuth, async (req, res) => {
         id: `stock-${locationId}-${r.carton_type_id}`,
         carton_type_id: String(r.carton_type_id),
         name: String(r.name),
+        label_code: buildLabelCode(/** @type {CartonType} */ (/** @type {unknown} */ (r))),
         length_cm: num(r.length_cm),
         width_cm: num(r.width_cm),
         height_cm: num(r.height_cm),
@@ -129,7 +135,7 @@ router.get("/", requireAuth, async (req, res) => {
     lowStock.push({
       rowId: row.id,
       location_name: String(t.location_name),
-      name: row.name,
+      name: row.label_code ?? row.name,
       condition,
       quantity,
       min_quantity: min,
