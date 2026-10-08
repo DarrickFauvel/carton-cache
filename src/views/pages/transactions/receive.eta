@@ -77,7 +77,7 @@
               <input name="unit_cost" type="number" inputmode="decimal" min="0" step="0.01" value="0" />
             </div>
             <fieldset class="form-group">
-              <legend>Dimensions (<%= it.unit %>) <small>(optional)</small></legend>
+              <legend>Actual inside dimensions (<%= it.unit %>), measured <small>(optional)</small></legend>
               <input type="hidden" name="dim_unit" value="<%= it.unit %>" />
               <div class="dims-row">
                 <div class="form-group">

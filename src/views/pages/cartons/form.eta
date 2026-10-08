@@ -69,21 +69,55 @@
              value="<%= it.carton && it.carton.unit_cost != null && it.carton.unit_cost !== '' ? it.carton.unit_cost : 0 %>" />
     </div>
 
-    <fieldset class="form-group">
-      <legend>Outer dimensions (<%= it.unit %>) <small>(optional)</small></legend>
-      <input type="hidden" name="dim_unit" value="<%= it.unit %>" />
-      <div class="dims-row">
-<% var dims = ['length', 'width', 'height'];
-   dims.forEach(function(dim) {
+    <input type="hidden" name="dim_unit" value="<%= it.unit %>" />
+<% // Re-rendered after a failed POST, carton holds the raw submitted values
+   // (e.g. `length`); otherwise the stored cm values (e.g. `length_cm`).
+   function dimValue(name) {
      var c = it.carton;
-     // Re-rendered after a failed POST, carton holds the raw submitted values.
-     var value = !c ? '' : c[dim] !== undefined ? c[dim] : c[dim + '_cm'] ? it.toUnit(Number(c[dim + '_cm'])) : ''; %>
+     if (!c) return '';
+     if (c[name] !== undefined) return c[name];
+     return c[name + '_cm'] != null ? it.toUnit(Number(c[name + '_cm'])) : '';
+   }
+   function dimInputs(prefix) {
+     return ['length', 'width', 'height'].map(function(dim) {
+       return { name: prefix + dim, letter: dim.charAt(0).toUpperCase(), value: dimValue(prefix + dim) };
+     });
+   } %>
+    <fieldset class="form-group">
+      <legend>Printed size (<%= it.unit %>) <small>(optional)</small></legend>
+      <div class="dims-row">
+<% dimInputs('printed_').forEach(function(d) { %>
         <div class="form-group">
-          <label for="<%= dim %>"><%= dim.charAt(0).toUpperCase() %></label>
-          <input id="<%= dim %>" type="number" name="<%= dim %>" inputmode="decimal" min="0" step="any"
-                 value="<%= value %>" placeholder="—" />
+          <label for="<%= d.name %>"><%= d.letter %></label>
+          <input id="<%= d.name %>" type="number" name="<%= d.name %>" inputmode="decimal" min="0" step="any"
+                 value="<%= d.value %>" placeholder="—" />
         </div>
 <% }) %>
+      </div>
+      <small>The size printed on the box, e.g. 6 × 6 × 6. Names the carton and goes on its label.</small>
+    </fieldset>
+
+    <fieldset class="form-group">
+      <legend>Actual inside dimensions (<%= it.unit %>) <small>(optional)</small></legend>
+      <div class="dims-row">
+<% dimInputs('').forEach(function(d) { %>
+        <div class="form-group">
+          <label for="<%= d.name %>"><%= d.letter %></label>
+          <input id="<%= d.name %>" type="number" name="<%= d.name %>" inputmode="decimal" min="0" step="any"
+                 value="<%= d.value %>" placeholder="—" />
+        </div>
+<% }) %>
+      </div>
+      <small>Measured inside the box, e.g. 5.75 × 5.75 × 6.25. Used to check whether an item fits.</small>
+<% var c = it.carton;
+   // Raw submitted value after a failed POST, else the stored value, else the default.
+   var wall = c && c.wall_thickness !== undefined ? c.wall_thickness
+            : it.toWallUnit(c && c.wall_thickness_cm != null ? Number(c.wall_thickness_cm) : it.defaultWallThicknessCm); %>
+      <div class="form-group">
+        <label for="wall_thickness">Wall thickness (<%= it.unit %>)</label>
+        <input id="wall_thickness" type="number" name="wall_thickness" inputmode="decimal" min="0" step="any"
+               value="<%= wall %>" />
+        <small>Outer size = inside + 2 × wall. Used for eBay package sizes; the default (<%= it.toWallUnit(it.defaultWallThicknessCm) %> <%= it.unit %>) suits single-wall cardboard.</small>
       </div>
     </fieldset>
 

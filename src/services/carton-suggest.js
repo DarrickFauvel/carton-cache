@@ -111,7 +111,8 @@ export async function suggest(args) {
   const item = /** @type {[number, number, number]} */ ([args.lengthCm, args.widthCm, args.heightCm]);
 
   const onSiteSql = `
-    SELECT ct.id, ct.name, ct.sku, ct.length_cm, ct.width_cm, ct.height_cm, ct.resizable, SUM(il.quantity) AS quantity
+    SELECT ct.id, ct.name, ct.sku, ct.length_cm, ct.width_cm, ct.height_cm,
+           ct.printed_length_cm, ct.printed_width_cm, ct.printed_height_cm, ct.wall_thickness_cm, ct.resizable, SUM(il.quantity) AS quantity
     FROM carton_types ct
     JOIN inventory_lots il ON il.carton_type_id = ct.id
     WHERE ct.org_id = ?
@@ -138,6 +139,10 @@ export async function suggest(args) {
       length_cm: carton[0],
       width_cm: carton[1],
       height_cm: carton[2],
+      printed_length_cm: row.printed_length_cm == null ? null : Number(row.printed_length_cm),
+      printed_width_cm:  row.printed_width_cm == null ? null : Number(row.printed_width_cm),
+      printed_height_cm: row.printed_height_cm == null ? null : Number(row.printed_height_cm),
+      wall_thickness_cm: Number(row.wall_thickness_cm),
       quantity: Number(row.quantity),
       leftover_volume_cm3: leftoverVolume,
       resize_height_cm: resizeHeight,

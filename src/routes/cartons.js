@@ -4,7 +4,7 @@ import { db } from "../db/client.js";
 import { ulid, now, str, defined } from "../lib/id.js";
 import * as cartonSuggest from "../services/carton-suggest.js";
 import { buildLabelCode } from "../lib/labels.js";
-import { parseUnit, toCm, cartonLabel } from "../lib/units.js";
+import { parseUnit, toCm, fromCm, cartonLabel, DEFAULT_WALL_THICKNESS_CM } from "../lib/units.js";
 
 /** @typedef {import("../types.js").CartonType} CartonType */
 
@@ -13,8 +13,11 @@ const router = Router();
 const FORM_SCRIPTS = ["barcode-scanner"];
 
 /**
- * Dimensions arrive as `length`/`width`/`height` in the form's `dim_unit`
- * (the org's display unit when the form was rendered) and are stored in cm.
+ * Dimensions arrive as `length`/`width`/`height` (actual inside, measured),
+ * `printed_length`/`printed_width`/`printed_height` (the size printed on the
+ * box) and `wall_thickness`, all in the form's `dim_unit` (the org's display
+ * unit when the form was rendered), and are stored in cm. A blank or invalid
+ * wall thickness falls back to the default.
  * @param {Record<string, string | string[]>} body
  */
 function parseCartonBody(body) {
@@ -25,6 +28,9 @@ function parseCartonBody(body) {
   const length      = str(body.length);
   const width       = str(body.width);
   const height      = str(body.height);
+  const wall        = parseFloat(str(body.wall_thickness));
+  /** @param {string} value */
+  const cm = (value) => (value ? toCm(parseFloat(value), unit) : null);
   const unit_cost   = str(body.unit_cost);
   const notes       = str(body.notes);
   const source_code = str(body.source_code);
@@ -37,6 +43,10 @@ function parseCartonBody(body) {
     length_cm:   length ? toCm(parseFloat(length), unit) : null,
     width_cm:    width  ? toCm(parseFloat(width), unit)  : null,
     height_cm:   height ? toCm(parseFloat(height), unit) : null,
+    printed_length_cm: cm(str(body.printed_length)),
+    printed_width_cm:  cm(str(body.printed_width)),
+    printed_height_cm: cm(str(body.printed_height)),
+    wall_thickness_cm: Number.isFinite(wall) && wall >= 0 ? toCm(wall, unit) : DEFAULT_WALL_THICKNESS_CM,
     unit_cost:   unit_cost ? parseFloat(unit_cost) : 0,
     notes:       notes.trim()     || null,
     source_code: source_code.trim() || null,
@@ -68,9 +78,13 @@ async function labelCodeOptions(orgId) {
  * @param {{ title: string; carton: unknown; error: string | null }} data
  */
 async function renderForm(req, res, data) {
+  const unit = parseUnit(req.session.orgUnit);
   res.render("pages/cartons/form", {
     ...data,
     ...(await labelCodeOptions(defined(req.session.orgId))),
+    defaultWallThicknessCm: DEFAULT_WALL_THICKNESS_CM,
+    // 3 decimals, so 1/8 in shows as 0.125 rather than rounding to 0.13.
+    toWallUnit: (/** @type {number} */ cm) => fromCm(cm, unit, 3),
     componentScripts: FORM_SCRIPTS,
   });
 }
@@ -98,11 +112,11 @@ router.get("/lookup", requireAuth, async (req, res) => {
   const barcode = String(req.query.barcode ?? "").trim();
   if (!barcode) return res.status(400).json({ error: "barcode required" });
   const result = await db.execute({
-    sql: "SELECT id, name, length_cm, width_cm, height_cm FROM carton_types WHERE barcode = ? AND org_id = ?",
+    sql: "SELECT id, name, length_cm, width_cm, height_cm, printed_length_cm, printed_width_cm, printed_height_cm FROM carton_types WHERE barcode = ? AND org_id = ?",
     args: [barcode, defined(req.session.orgId)],
   });
   if (!result.rows[0]) return res.status(404).json({ error: "No carton with that barcode." });
-  const carton = /** @type {{ id: string; name: string; length_cm: number | null; width_cm: number | null; height_cm: number | null }} */ (/** @type {unknown} */ (result.rows[0]));
+  const carton = /** @type {{ id: string; name: string; length_cm: number | null; width_cm: number | null; height_cm: number | null; printed_length_cm: number | null; printed_width_cm: number | null; printed_height_cm: number | null }} */ (/** @type {unknown} */ (result.rows[0]));
   res.json({ id: carton.id, name: carton.name, label: cartonLabel(carton, parseUnit(req.session.orgUnit)) });
 });
 
@@ -156,10 +170,13 @@ router.post("/", requireRole("admin", "manager"), async (req, res) => {
   const id = ulid();
   try {
     await db.execute({
-      sql: `INSERT INTO carton_types (id, name, sku, barcode, length_cm, width_cm, height_cm, unit_cost, notes, source_code, size_code, resizable, org_id, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO carton_types (id, name, sku, barcode, length_cm, width_cm, height_cm,
+                                      printed_length_cm, printed_width_cm, printed_height_cm, wall_thickness_cm,
+                                      unit_cost, notes, source_code, size_code, resizable, org_id, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [id, fields.name, fields.sku, fields.barcode,
              fields.length_cm, fields.width_cm, fields.height_cm,
+             fields.printed_length_cm, fields.printed_width_cm, fields.printed_height_cm, fields.wall_thickness_cm,
              fields.unit_cost, fields.notes, fields.source_code, fields.size_code, fields.resizable,
              defined(req.session.orgId), now()],
     });
@@ -207,10 +224,12 @@ router.post("/:id/edit", requireRole("admin", "manager"), async (req, res) => {
   }
   try {
     await db.execute({
-      sql: `UPDATE carton_types SET name=?, sku=?, barcode=?, length_cm=?, width_cm=?, height_cm=?, unit_cost=?, notes=?, source_code=?, size_code=?, resizable=?
+      sql: `UPDATE carton_types SET name=?, sku=?, barcode=?, length_cm=?, width_cm=?, height_cm=?,
+                   printed_length_cm=?, printed_width_cm=?, printed_height_cm=?, wall_thickness_cm=?, unit_cost=?, notes=?, source_code=?, size_code=?, resizable=?
             WHERE id=? AND org_id=?`,
       args: [fields.name, fields.sku, fields.barcode,
              fields.length_cm, fields.width_cm, fields.height_cm,
+             fields.printed_length_cm, fields.printed_width_cm, fields.printed_height_cm, fields.wall_thickness_cm,
              fields.unit_cost, fields.notes, fields.source_code, fields.size_code, fields.resizable, id, orgId],
     });
   } catch (err) {

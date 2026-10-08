@@ -51,9 +51,11 @@ Defines a class of carton independent of location or condition.
 | `name` | text | Human label, e.g. "Medium Shipper" |
 | `sku` | text | Optional — supplier part number |
 | `barcode` | text | Optional — EAN/UPC/QR value for scanning |
-| `length_cm` | real | Outer dimension |
-| `width_cm` | real | Outer dimension |
-| `height_cm` | real | Outer dimension |
+| `length_cm` | real | Actual inside dimension, measured; used for fit suggestions |
+| `width_cm` | real | Actual inside dimension, measured |
+| `height_cm` | real | Actual inside dimension, measured |
+| `printed_length_cm`, `printed_width_cm`, `printed_height_cm` | real | Optional nominal size printed on the box (e.g. 6 × 6 × 6 for a box that's 5.75 × 5.75 × 6.25 inside); names the carton in lists/pickers and goes in its label code |
+| `wall_thickness_cm` | real | Default 0.3175 (1/8 in). Outer size = inside + 2 × wall; used for eBay package sizes |
 | `unit_cost` | real | Purchase cost per new carton (your currency) |
 | `notes` | text | Optional |
 | `created_at` | integer | Unix timestamp |
@@ -347,5 +349,5 @@ Staff log activity on personal phones. Every form must work as a one-handed, thu
 - Barcode label printing
 - Native mobile app
 - Webhook / Slack notifications
-- Weight / volume tracking beyond outer dimensions (except `RetailCartonOption.weight_lb`, tracked separately since retail listings include it)
+- Weight / volume tracking beyond carton dimensions (except `RetailCartonOption.weight_lb`, tracked separately since retail listings include it)
 - Billing/plan enforcement — `Organization.plan` (`free`/`pro`) exists in the schema for future use but nothing reads or enforces it today
