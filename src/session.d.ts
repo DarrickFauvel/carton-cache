@@ -11,6 +11,8 @@ declare module "express-session" {
     orgName: string;
     orgPlan: "free" | "pro";
     orgUnit: "in" | "cm";
+    /** Location last received into, preselected on the next Receive form. Unset until the first receive. */
+    lastReceiveLocationId?: string;
     /** Location last consumed from, preselected on the next Consume form. Unset until the first consume. */
     lastConsumeLocationId?: string;
   }
