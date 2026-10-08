@@ -3,7 +3,7 @@
 <div class="page-header">
   <h1><%= it.title %></h1>
   <div class="action-row">
-    <a href="/cartons" class="btn">Cancel</a>
+    <a href="/cartons<%= it.carton && it.carton.id ? (it.carton.archived_at != null ? '?archived=1' : '') + '#carton-' + it.carton.id : '' %>" class="btn">Cancel</a>
   </div>
 </div>
 

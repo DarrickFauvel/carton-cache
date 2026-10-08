@@ -128,6 +128,12 @@ body.has-nav {
   padding-top: calc(var(--nav-h) + env(safe-area-inset-top, 0px));
 }
 
+/* Jumping to an #anchor (e.g. back to an edited carton row) stops below the
+   fixed header instead of underneath it. */
+:target {
+  scroll-margin-top: calc(var(--nav-h) + env(safe-area-inset-top, 0px) + var(--space-4));
+}
+
 /* ── Header — mobile-first grid ───────────────────────────────────────────── */
 /* Public (unauthenticated) header is always single-row */
 body:not(.has-app-nav) .site-header {
@@ -1180,6 +1186,21 @@ fieldset.form-group {
 .condition--good { background: var(--badge-good-bg); color: var(--condition-good); }
 .condition--fair { background: var(--badge-fair-bg); color: var(--condition-fair); }
 .condition--poor { background: var(--badge-poor-bg); color: var(--condition-poor); }
+
+/* A view toggle above a list, e.g. "Show archived (2)" on carton types. */
+.list-filter {
+  display: flex;
+  justify-content: flex-end;
+  margin-block: 0 var(--space-2);
+}
+
+/* Briefly highlight the table row just returned to (e.g. after saving it). */
+tr:target > td { animation: row-flash 2s ease-out; }
+
+@keyframes row-flash {
+  from { background: color-mix(in srgb, var(--color-primary) 18%, transparent); }
+  to   { background: transparent; }
+}
 
 /* Neutral status tag, e.g. "Archived" / "One-time use" on carton types. */
 .badge {
