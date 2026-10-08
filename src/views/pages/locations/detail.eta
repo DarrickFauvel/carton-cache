@@ -9,6 +9,7 @@
   </div>
   <div class="action-row">
     <a href="/transactions/receive" class="btn btn--primary">+ Receive</a>
+    <a href="/transactions/transfer/several?to=<%= it.location.id %>" class="btn">Transfer cartons here</a>
     <% if (it.user && it.user.role === 'admin') { %>
     <a href="/locations/<%= it.location.id %>/edit" class="btn">Edit</a>
     <% } %>
@@ -17,6 +18,9 @@
 
 <% if (it.saved) { %>
 <p class="alert alert--success" role="status">Saved.</p>
+<% } %>
+<% if (it.transferred) { %>
+<p class="alert alert--success" role="status">Transferred <%= it.transferred %> <%= it.transferred === 1 ? 'carton' : 'cartons' %> here.</p>
 <% } %>
 <% if (it.moved) { %>
 <p class="alert alert--success" role="status">Moved to <%= it.location.parent_name %>, with all its stock.</p>

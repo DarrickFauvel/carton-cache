@@ -1223,6 +1223,83 @@ qty-stepper {
   &[open] summary { margin-bottom: var(--space-4); }
 }
 
+/* ── Transfer several: checklist of a location's stock ───────────────────── */
+.transfer-lots {
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+
+  & legend {
+    padding: 0 var(--space-2);
+    margin-inline-start: var(--space-3);
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+}
+
+.transfer-lots__all {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.transfer-lots__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.transfer-lot {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+
+  &:last-child { border-bottom: none; }
+  &:has(input[name="lot"]:checked) { background: color-mix(in srgb, var(--color-primary) 6%, transparent); }
+
+  & input[type="checkbox"] { width: 1.15rem; height: 1.15rem; margin: 0; }
+}
+
+.transfer-lot__name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-2);
+  margin: 0;
+  font-weight: 400;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.transfer-lot__code { font-family: var(--font-mono); font-weight: 700; }
+
+.transfer-lot__qty {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  white-space: nowrap;
+
+  & input { width: 4.5rem; min-height: 2.25rem; padding-block: var(--space-1); text-align: right; }
+  & small { color: var(--color-text-muted); }
+}
+
+@media (max-width: 480px) {
+  .transfer-lot {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    & .transfer-lot__qty { grid-column: 2 / -1; justify-self: end; }
+  }
+}
+
 /* ── Dashboard stock list ─────────────────────────────────────────────────── */
 /* One row per carton type at a location: label code (or size) and name, a chip per condition
    in stock, and the total. Sorted by label source, then size, by the route. */

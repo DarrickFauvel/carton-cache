@@ -285,6 +285,129 @@ router.post("/transfer", requireAuth, async (req, res) => {
   res.redirect("/");
 });
 
+// ── Transfer several ──────────────────────────────────────────────────────────
+
+/**
+ * @typedef {object} TransferSeveralValues
+ * @property {string} from_location_id
+ * @property {string} to_location_id
+ * @property {string[]} lots selected "carton_type_id:condition" keys
+ * @property {Record<string, string>} qty quantity per lot key
+ * @property {string} notes
+ */
+
+/**
+ * Lists everything in stock at the chosen "from" location as a checklist, so
+ * several carton types (e.g. a whole stack's worth) move in one submit.
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @param {{ error?: string | null, values?: Partial<TransferSeveralValues> }} [opts]
+ */
+async function renderTransferSeveral(req, res, { error = null, values = {} } = {}) {
+  const orgId = defined(req.session.orgId);
+  /** @param {unknown} v */
+  const q = (v) => (typeof v === "string" ? v : "");
+  const from = values.from_location_id ?? q(req.query.from);
+  const to = values.to_location_id ?? (q(req.query.to) || req.session.lastTransferToLocationId || "");
+  const [locations, lots] = await Promise.all([
+    locationOptions(orgId),
+    from
+      ? db.execute({
+          // Length, then width, then height, smallest first (printed size if
+          // set, as on the label), the way cartons sit in a stack.
+          sql: `SELECT il.carton_type_id, il.condition, il.quantity, ct.name,
+                       ct.length_cm, ct.width_cm, ct.height_cm,
+                       ct.printed_length_cm, ct.printed_width_cm, ct.printed_height_cm, ct.source_code
+                  FROM inventory_lots il
+                  JOIN carton_types ct ON ct.id = il.carton_type_id
+                 WHERE il.location_id = ? AND il.org_id = ? AND il.quantity > 0
+                 ORDER BY COALESCE(ct.printed_length_cm, ct.length_cm) IS NULL,
+                          COALESCE(ct.printed_length_cm, ct.length_cm),
+                          COALESCE(ct.printed_width_cm, ct.width_cm),
+                          COALESCE(ct.printed_height_cm, ct.height_cm),
+                          ct.name, il.condition`,
+          args: [from, orgId],
+        }).then((r) => r.rows.map((row) => ({
+          key: `${row.carton_type_id}:${row.condition}`,
+          name: String(row.name),
+          condition: String(row.condition),
+          quantity: Number(row.quantity),
+          label_code: buildLabelCode(/** @type {CartonType} */ (/** @type {unknown} */ (row))),
+        })))
+      : Promise.resolve([]),
+  ]);
+  res.status(error ? 422 : 200).render("pages/transactions/transfer-several", {
+    title: "Transfer Several",
+    locations,
+    lots,
+    error,
+    values: { from_location_id: from, to_location_id: to, lots: [], qty: {}, notes: "", ...values },
+  });
+}
+
+router.get("/transfer/several", requireAuth, (req, res) => renderTransferSeveral(req, res));
+
+router.post("/transfer/several", requireAuth, async (req, res) => {
+  const orgId = defined(req.session.orgId);
+  const rawLots = req.body.lot;
+  const rawQty = req.body.qty && typeof req.body.qty === "object" ? req.body.qty : {};
+  /** @type {TransferSeveralValues} */
+  const values = {
+    from_location_id: str(req.body.from_location_id),
+    to_location_id:   str(req.body.to_location_id),
+    lots: (Array.isArray(rawLots) ? rawLots : rawLots ? [rawLots] : []).map(String),
+    qty: Object.fromEntries(Object.entries(rawQty).map(([k, v]) => [k, String(v)])),
+    notes: str(req.body.notes),
+  };
+  /** @param {string} error */
+  const reject = (error) => renderTransferSeveral(req, res, { error, values });
+
+  if (!values.from_location_id || !values.to_location_id) return reject("Choose both locations.");
+  if (values.from_location_id === values.to_location_id) return reject("From and to locations must be different.");
+  if (values.lots.length === 0) return reject("Tick at least one carton to transfer.");
+
+  /** @type {import("../services/inventory.js").TransferLine[]} */
+  const lines = [];
+  for (const key of values.lots) {
+    const [cartonTypeId, cond] = key.split(":");
+    const condition = CONDITIONS.find((c) => c === cond);
+    const quantity = Number(values.qty[key]);
+    if (!cartonTypeId || !condition) return reject("One of the selected cartons isn't valid. Reload the page and try again.");
+    if (!Number.isInteger(quantity) || quantity < 1) return reject("Each ticked carton needs a whole-number quantity of at least 1.");
+    lines.push({ cartonTypeId, condition, quantity });
+  }
+
+  const destination = await db.execute({
+    sql: "SELECT 1 FROM locations WHERE id = ? AND org_id = ? AND active = 1",
+    args: [values.to_location_id, orgId],
+  });
+  if (!destination.rows[0]) return reject("Choose a valid destination location.");
+
+  try {
+    await inventory.transferMany({
+      orgId,
+      fromLocationId: values.from_location_id,
+      toLocationId: values.to_location_id,
+      lines,
+      userId: defined(req.session.userId),
+      notes: values.notes || undefined,
+    });
+  } catch (err) {
+    if (err instanceof inventory.InsufficientStockError && err.line) {
+      const carton = await db.execute({ sql: "SELECT name FROM carton_types WHERE id = ? AND org_id = ?", args: [err.line.cartonTypeId, orgId] });
+      const name = String(carton.rows[0]?.name ?? "a carton");
+      return reject(
+        `Nothing was transferred: only ${err.available} of ${name} (${err.line.condition}) ${err.available === 1 ? "is" : "are"} in stock at the from location now.`
+      );
+    }
+    throw err;
+  }
+  req.session.lastTransferFromLocationId = values.from_location_id;
+  req.session.lastTransferToLocationId = values.to_location_id;
+  const role = req.session.userRole;
+  res.redirect(role === "admin" || role === "manager" ? `/locations/${values.to_location_id}?transferred=${lines.reduce((n, l) => n + l.quantity, 0)}` : "/");
+});
+
 // ── Adjustment ────────────────────────────────────────────────────────────────
 
 router.get("/adjust", requireRole("admin", "manager"), async (req, res) => {
