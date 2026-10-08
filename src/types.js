@@ -123,6 +123,7 @@
  * @property {number | null} printed_width_cm
  * @property {number | null} printed_height_cm
  * @property {number} wall_thickness_cm outer = inside + 2 × wall thickness
+ * @property {string | null} label_code see buildLabelCode(); null without a source code
  * @property {number} quantity
  * @property {number} leftover_volume_cm3 after cutting down, if resize_height_cm is set
  * @property {number | null} resize_height_cm cut the carton down to this height; null = use as-is
