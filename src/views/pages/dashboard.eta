@@ -59,7 +59,13 @@
       <% const hasDims = row.length_cm != null && row.width_cm != null && row.height_cm != null; %>
       <div class="stock-row__main">
         <% if (row.label_code) { %>
-        <span class="stock-row__lead stock-row__label"><%= row.label_code %></span>
+        <span class="stock-row__lead stock-row__label"><%= row.label_code %><a href="/cartons/<%= row.carton_type_id %>/label" target="_blank" class="stock-row__print" aria-label="Print label <%= row.label_code %>" title="Print label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 9V3h12v6"/>
+            <rect x="3" y="9" width="18" height="8" rx="2"/>
+            <path d="M6 14h12v7H6z"/>
+          </svg>
+        </a></span>
         <% } else if (hasDims) { %>
         <span class="stock-row__lead"><%= it.toUnit(row.length_cm) %><span class="dim-x">×</span><%= it.toUnit(row.width_cm) %><span class="dim-x">×</span><%= it.toUnit(row.height_cm) %> <small><%= it.unit %></small></span>
         <% } else { %>
