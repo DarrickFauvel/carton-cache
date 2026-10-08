@@ -12,17 +12,23 @@
 <% } %>
 
 <section class="form-card">
-  <form method="post" action="<%= it.location ? '/locations/' + it.location.id + '/edit' : '/locations' %>" class="stack">
+  <%
+    /* Editing only when the location has an id: a new one can still arrive
+       with values, e.g. a preselected parent or a re-render after an error. */
+    const loc = it.location || {};
+    const editing = !!loc.id;
+  %>
+  <form method="post" action="<%= editing ? '/locations/' + loc.id + '/edit' : '/locations' %>" class="stack">
 
     <div class="form-group">
       <label for="name">Name</label>
       <input id="name" type="text" name="name"
-             value="<%= it.location ? it.location.name : '' %>" required autofocus />
+             value="<%= loc.name || '' %>" required autofocus />
     </div>
 
     <div class="form-group">
       <label for="parent_id">Located in <small>(optional)</small></label>
-      <% const parentId = it.location && it.location.parent_id ? String(it.location.parent_id) : ''; %>
+      <% const parentId = loc.parent_id ? String(loc.parent_id) : ''; %>
       <select id="parent_id" name="parent_id"<%= it.hasChildren ? ' disabled' : '' %>>
         <option value="">Nowhere — it's a top-level location</option>
         <% it.parents.forEach(function(p) { %>
@@ -39,21 +45,21 @@
     <div class="form-group">
       <label for="address">Address <small>(optional)</small></label>
       <input id="address" type="text" name="address"
-             value="<%= it.location ? (it.location.address || '') : '' %>" />
+             value="<%= loc.address || '' %>" />
     </div>
 
-    <% if (it.location) { %>
+    <% if (editing) { %>
     <div class="form-group">
       <label for="active">Status</label>
       <select id="active" name="active">
-        <option value="1"<%= it.location.active ? ' selected' : '' %>>Active</option>
-        <option value="0"<%= !it.location.active ? ' selected' : '' %>>Inactive</option>
+        <option value="1"<%= Number(loc.active) ? ' selected' : '' %>>Active</option>
+        <option value="0"<%= !Number(loc.active) ? ' selected' : '' %>>Inactive</option>
       </select>
     </div>
     <% } %>
 
     <button type="submit" class="btn btn--primary">
-      <%= it.location ? 'Save changes' : 'Create location' %>
+      <%= editing ? 'Save changes' : 'Create location' %>
     </button>
   </form>
 </section>
