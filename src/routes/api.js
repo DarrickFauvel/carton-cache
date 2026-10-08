@@ -7,6 +7,7 @@
 import { Router } from "express";
 import { requireApiAuth, requireApiRole } from "../middleware/auth.js";
 import { db } from "../db/client.js";
+import { locationOptions } from "../lib/locations.js";
 import * as inventory from "../services/inventory.js";
 import * as cartonSuggest from "../services/carton-suggest.js";
 import { defined } from "../lib/id.js";
@@ -27,11 +28,8 @@ router.get("/me", requireApiAuth, (req, res) => {
 });
 
 router.get("/locations", requireApiAuth, async (req, res) => {
-  const result = await db.execute({
-    sql: "SELECT id, name FROM locations WHERE active = 1 AND org_id = ? ORDER BY name",
-    args: [defined(req.session.orgId)],
-  });
-  res.json(result.rows);
+  const locations = await locationOptions(defined(req.session.orgId));
+  res.json(locations.map(({ id, name }) => ({ id, name })));
 });
 
 router.get("/cartons/suggest", requireApiAuth, async (req, res) => {
