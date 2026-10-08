@@ -132,14 +132,34 @@ router.get("/:id/label", requireAuth, async (req, res) => {
   res.render("pages/cartons/label", { labelCode, cartonName: carton.name });
 });
 
-router.get("/", requireAuth, async (req, res) => {
-  const result = await db.execute({ sql: "SELECT * FROM carton_types WHERE org_id = ? ORDER BY archived_at IS NOT NULL, name", args: [defined(req.session.orgId)] });
+/**
+ * Renders the carton type list. Archived carton types are hidden unless the
+ * request has `?archived=1`.
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @param {{ deleteError?: string }} [extra]
+ */
+async function renderList(req, res, extra = {}) {
+  const orgId = defined(req.session.orgId);
+  const showArchived = req.query.archived === "1";
+  const [result, archived] = await Promise.all([
+    db.execute({
+      sql: `SELECT * FROM carton_types WHERE org_id = ? ${showArchived ? "" : "AND archived_at IS NULL"} ORDER BY archived_at IS NOT NULL, name`,
+      args: [orgId],
+    }),
+    db.execute({ sql: "SELECT COUNT(*) AS n FROM carton_types WHERE org_id = ? AND archived_at IS NOT NULL", args: [orgId] }),
+  ]);
   res.render("pages/cartons/index", {
     title: "Carton Types",
     cartons: withLabelCode(result.rows),
     saved: false,
+    showArchived,
+    archivedCount: Number(archived.rows[0]?.n ?? 0),
+    ...extra,
   });
-});
+}
+
+router.get("/", requireAuth, (req, res) => renderList(req, res));
 
 router.get("/new", requireRole("admin", "manager"), async (req, res) => {
   await renderForm(req, res, {
@@ -242,8 +262,11 @@ router.post("/:id/edit", requireRole("admin", "manager"), async (req, res) => {
   } else {
     await db.execute({ sql: "UPDATE carton_types SET archived_at = NULL WHERE id = ? AND org_id = ?", args: [id, orgId] });
   }
-  // Land back on the edited row rather than the top of the list.
-  res.redirect(`/cartons?saved=1#carton-${id}`);
+  // Land back on the edited row rather than the top of the list, in the
+  // archived view if the carton is (now) archived so its row is shown.
+  const saved = await db.execute({ sql: "SELECT archived_at FROM carton_types WHERE id = ? AND org_id = ?", args: [id, orgId] });
+  const archivedParam = saved.rows[0]?.archived_at != null ? "&archived=1" : "";
+  res.redirect(`/cartons?saved=1${archivedParam}#carton-${id}`);
 });
 
 router.post("/:id/delete", requireRole("admin", "manager"), async (req, res) => {
@@ -257,13 +280,7 @@ router.post("/:id/delete", requireRole("admin", "manager"), async (req, res) => 
   ]);
 
   if (Number(txCount.rows[0]?.n) > 0 || Number(lotCount.rows[0]?.n) > 0) {
-    const result = await db.execute({ sql: "SELECT * FROM carton_types WHERE org_id = ? ORDER BY archived_at IS NOT NULL, name", args: [orgId] });
-    return res.render("pages/cartons/index", {
-      title: "Carton Types",
-      cartons: withLabelCode(result.rows),
-      saved: false,
-      deleteError: "Cannot delete a carton type that has transactions or stock on hand.",
-    });
+    return renderList(req, res, { deleteError: "Cannot delete a carton type that has transactions or stock on hand." });
   }
 
   await db.execute({ sql: "DELETE FROM carton_types WHERE id = ? AND org_id = ?", args: [id, orgId] });

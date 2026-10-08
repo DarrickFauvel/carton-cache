@@ -1187,6 +1187,13 @@ fieldset.form-group {
 .condition--fair { background: var(--badge-fair-bg); color: var(--condition-fair); }
 .condition--poor { background: var(--badge-poor-bg); color: var(--condition-poor); }
 
+/* A view toggle above a list, e.g. "Show archived (2)" on carton types. */
+.list-filter {
+  display: flex;
+  justify-content: flex-end;
+  margin-block: 0 var(--space-2);
+}
+
 /* Briefly highlight the table row just returned to (e.g. after saving it). */
 tr:target > td { animation: row-flash 2s ease-out; }
 
