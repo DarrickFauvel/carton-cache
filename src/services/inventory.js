@@ -172,12 +172,42 @@ export async function consume(args) {
   return txId;
 }
 
+/** Thrown when a stock movement asks for more than the source lot holds. */
+export class InsufficientStockError extends Error {
+  /** @param {number} available */
+  constructor(available) {
+    super(`Only ${available} in stock.`);
+    this.name = "InsufficientStockError";
+    this.available = available;
+  }
+}
+
 /**
  * @param {TransferArgs} args
  * @returns {Promise<[string, string]>}
+ * @throws {InsufficientStockError} if the source lot holds fewer than `quantity`
  */
 export async function transfer(args) {
   const ts = now();
+
+  // Decrement the source first, only if it holds enough. Checking and
+  // decrementing in one statement means two concurrent transfers can't both
+  // pass the check and drive the lot below zero.
+  const decremented = await db.execute({
+    sql: `
+      UPDATE inventory_lots
+      SET quantity = quantity - ?, updated_at = ?
+      WHERE location_id = ? AND carton_type_id = ? AND condition = ? AND org_id = ? AND quantity >= ?
+    `,
+    args: [args.quantity, ts, args.fromLocationId, args.cartonTypeId, args.condition, args.orgId, args.quantity],
+  });
+  if (decremented.rowsAffected === 0) {
+    const current = await db.execute({
+      sql: "SELECT quantity FROM inventory_lots WHERE location_id = ? AND carton_type_id = ? AND condition = ? AND org_id = ?",
+      args: [args.fromLocationId, args.cartonTypeId, args.condition, args.orgId],
+    });
+    throw new InsufficientStockError(Number(current.rows[0]?.quantity ?? 0));
+  }
 
   const outId = await insertTx(
     args.orgId,
@@ -207,27 +237,17 @@ export async function transfer(args) {
     args: [inId, outId],
   });
 
-  // Decrement source
-  await db.execute({
-    sql: `
-      UPDATE inventory_lots
-      SET quantity = MAX(0, quantity - ?), updated_at = ?
-      WHERE location_id = ? AND carton_type_id = ? AND condition = ?
-    `,
-    args: [args.quantity, ts, args.fromLocationId, args.cartonTypeId, args.condition],
-  });
-
   // Increment destination
   await db.execute({
     sql: `
-      INSERT INTO inventory_lots (id, location_id, carton_type_id, condition, quantity, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO inventory_lots (id, location_id, carton_type_id, condition, quantity, updated_at, org_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT (location_id, carton_type_id, condition)
       DO UPDATE SET quantity = quantity + ?, updated_at = ?
     `,
     args: [
       ulid(), args.toLocationId, args.cartonTypeId, args.condition,
-      args.quantity, ts,
+      args.quantity, ts, args.orgId,
       args.quantity, ts,
     ],
   });
