@@ -196,7 +196,7 @@ class CartonSuggest extends HTMLElement {
    */
   #formatDims(carton, unit) {
     const dims = [carton.length_cm, carton.width_cm, carton.height_cm].map((cm) => fromCm(cm, unit).toFixed(1));
-    return `${dims.join("×")} ${unit}`;
+    return `${dims.join("\u2009×\u2009")} ${unit}`;
   }
 
   /**
