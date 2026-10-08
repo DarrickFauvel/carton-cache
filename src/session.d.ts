@@ -5,7 +5,6 @@ declare module "express-session" {
     userId: string;
     userRole: "admin" | "manager" | "staff" | "viewer";
     userName: string;
-    userLocationIds: string[];
     userAvatarColor: string;
     orgId: string;
     orgName: string;
