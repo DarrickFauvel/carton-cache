@@ -670,7 +670,8 @@ label {
   margin-bottom: var(--space-1);
 }
 
-:is(input, select, textarea) {
+/* Text-like controls only: checkboxes and radios keep their native size. */
+:is(input:not([type="checkbox"], [type="radio"]), select, textarea) {
   width: 100%;
   min-height: 2.75rem;
   padding: var(--space-2) var(--space-3);
@@ -696,6 +697,79 @@ fieldset.form-group {
   border: none;
   padding: 0;
   margin: 0;
+}
+
+/* A titled group of fields within a longer form (e.g. the carton type form).
+   Sections after the first are separated by a rule above their title. */
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  border: none;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+
+  /* Floated, the legend is laid out as an ordinary flex item instead of
+     being drawn over the fieldset's top border. */
+  & > legend {
+    float: left;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+  }
+
+  /* Sub-groups (e.g. the three dimension inputs) are titled like a label. */
+  & fieldset.form-group > legend {
+    padding: 0;
+    margin-bottom: var(--space-1);
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  /* Keep hints directly under their input (Kelp adds a bottom margin to
+     inputs that aren't a :last-child). */
+  & .form-group > :is(input, select, textarea) { margin-block-end: 0; }
+}
+
+.stack > .form-section + .form-section,
+.stack > input[type="hidden"] + .form-section {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-6);
+}
+
+/* A checkbox with its label text beside it, and its hint aligned under the text. */
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: 0;
+  cursor: pointer;
+
+  & input {
+    width: 1.1rem;
+    height: 1.1rem;
+    margin: 0;
+    flex-shrink: 0;
+    accent-color: var(--color-primary);
+  }
+
+  & + small { padding-left: calc(1.1rem + var(--space-2)); }
+}
+
+/* Two fields side by side on wider screens, stacked on phones. */
+.form-row {
+  display: grid;
+  gap: var(--space-4);
+
+  @container main (min-width: 480px) {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 /* Full-width submit on standalone transaction forms */
