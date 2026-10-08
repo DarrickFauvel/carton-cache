@@ -9,7 +9,7 @@
     /* Exactly the printable area (page minus @page margins), on screen too, so
        the fit measured on screen matches what prints. */
     .label { box-sizing: border-box; width: 3.4in; height: 1.025in; padding: 0 0.15in; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-    .code { font-size: 28pt; font-weight: bold; white-space: nowrap; line-height: 1; }
+    .code { font-size: 18pt; font-weight: bold; white-space: nowrap; line-height: 1; }
     .actions { position: fixed; bottom: 0.1in; }
     @media print { .actions { display: none; } }
   </style>
@@ -21,8 +21,12 @@
     <a href="/cartons">Back</a>
   </div>
   <script>
-    // Scale the code to fill the label's width (capped by its height). Text
-    // width grows linearly with font size, so one measurement is enough.
+    // Largest size the code is printed at; long codes shrink below this to fit.
+    const MAX_PT = 18;
+
+    // Print the code at MAX_PT, or smaller if that wouldn't fit the label's
+    // width (or height). Text width grows linearly with font size, so one
+    // measurement is enough.
     function fitCode() {
       const label = document.querySelector(".label");
       const code = document.querySelector(".code");
@@ -31,7 +35,9 @@
       const style = getComputedStyle(label);
       const width = label.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
       const scale = Math.min(width / code.offsetWidth, label.clientHeight / code.offsetHeight);
-      code.style.fontSize = Math.floor(base * scale * 0.95) + "px";
+      const fitPx = Math.floor(base * scale * 0.95);
+      const maxPx = MAX_PT * 96 / 72;
+      code.style.fontSize = Math.min(fitPx, maxPx) + "px";
     }
     window.onload = () => {
       fitCode();
