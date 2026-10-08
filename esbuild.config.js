@@ -11,6 +11,7 @@ const components = [
   "carton-suggest",
   "location-stock-filter",
   "label-preview",
+  "qty-stepper",
 ];
 
 await Promise.all(

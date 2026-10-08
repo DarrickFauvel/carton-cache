@@ -828,6 +828,21 @@ fieldset.form-group {
    instead of sitting in a wrapper box with a line box's extra descender space. */
 :is(carton-scanner, barcode-scanner) { display: contents; }
 
+/* −/+ buttons around a number input. Hidden until the element upgrades, so
+   without JS it's just the plain input. */
+qty-stepper {
+  & input { text-align: center; font-variant-numeric: tabular-nums; }
+  &:not(:defined) .qty-stepper__btn { display: none; }
+}
+
+.qty-stepper__btn {
+  min-width: 2.75rem;
+  padding-inline: var(--space-3);
+  font-size: 1.15rem;
+  font-weight: 600;
+  touch-action: manipulation; /* no double-tap zoom when tapping + quickly */
+}
+
 .dims-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

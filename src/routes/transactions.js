@@ -38,7 +38,7 @@ router.get("/receive", requireAuth, async (req, res) => {
     cartons: cartons.rows,
     canCreateLocation: userRole === "admin",
     canCreateCarton: userRole === "admin" || userRole === "manager",
-    componentScripts: ["barcode-scanner", "quick-create", "carton-scanner"],
+    componentScripts: ["barcode-scanner", "quick-create", "carton-scanner", "qty-stepper"],
     printLabelCarton,
     // Preselect the location last received into, for the next carton and
     // later visits.
@@ -91,7 +91,7 @@ async function renderConsume(req, res, { error = null, values = {} } = {}) {
     title: "Consume Stock",
     locations: locations.rows,
     cartons: cartons.rows,
-    componentScripts: ["barcode-scanner", "carton-scanner", "carton-suggest"],
+    componentScripts: ["barcode-scanner", "carton-scanner", "carton-suggest", "qty-stepper"],
     error,
     // Preselect the location last consumed from (see Receive), unless a
     // re-render after a failed POST passes the submitted values.
@@ -199,7 +199,7 @@ async function renderTransfer(req, res, { error = null, values = {} } = {}) {
       to_location_id: req.session.lastTransferToLocationId ?? "",
       ...values,
     },
-    componentScripts: ["location-stock-filter"],
+    componentScripts: ["location-stock-filter", "qty-stepper"],
   });
 }
 
@@ -275,6 +275,7 @@ router.get("/adjust", requireRole("admin", "manager"), async (req, res) => {
     title: "Adjust Stock",
     locations: locations.rows,
     cartons: cartons.rows,
+    componentScripts: ["qty-stepper"],
   });
 });
 
