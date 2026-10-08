@@ -1209,8 +1209,8 @@ qty-stepper {
   margin-block: 0 var(--space-2);
 }
 
-/* Briefly highlight the table row just returned to (e.g. after saving it). */
-tr:target > td { animation: row-flash 2s ease-out; }
+/* Briefly highlight the row just returned to (e.g. after saving it). */
+:is(tr:target > td, .carton-item:target) { animation: row-flash 2s ease-out; }
 
 @keyframes row-flash {
   from { background: color-mix(in srgb, var(--color-primary) 18%, transparent); }
@@ -1353,6 +1353,205 @@ tr:target > td { animation: row-flash 2s ease-out; }
       & .action-row {
         width: 100%;
         justify-content: flex-end;
+      }
+    }
+  }
+}
+
+/* ── Carton type list ─────────────────────────────────────────────────────── */
+/* One row per carton type: details on the left, cost and actions on the right;
+   at narrow widths details take the full width with cost + actions below. */
+.carton-list {
+  container-type: inline-size;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.carton-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas: "main cost actions";
+  align-items: center;
+  gap: var(--space-2) var(--space-6);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  scroll-margin-top: calc(var(--nav-h) + var(--space-4));
+  transition: background-color 0.2s ease;
+
+  &:last-child { border-bottom: none; }
+
+  @media (hover: hover) {
+    &:hover { background: color-mix(in srgb, var(--color-bg) 55%, var(--color-surface)); }
+  }
+
+  &.carton-item--archived :is(.carton-item__main, .carton-item__cost) { opacity: 0.6; }
+
+  @container (max-width: 560px) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: var(--space-3);
+
+    & .carton-item__main { flex-basis: 100%; }
+    & .carton-item__cost small.each { display: none; }
+    & .carton-item__actions { margin-inline-start: auto; }
+  }
+}
+
+.carton-item__main {
+  grid-area: main;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.carton-item__name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.carton-item__dims {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-3);
+  margin: 0;
+}
+
+.carton-item__dims-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.carton-item__dims-note {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.carton-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
+
+  & div { display: flex; align-items: baseline; gap: var(--space-1); }
+  & dt { color: var(--color-text-muted); }
+  & dd { margin: 0; }
+  & code { font-family: var(--font-mono); font-size: 0.8rem; overflow-wrap: anywhere; }
+}
+
+.carton-item__notes {
+  margin: var(--space-1) 0 0;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+/* Secondary info (printed size, codes, notes): one truncated line until opened. */
+.carton-item__more {
+  min-width: 0;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+
+  & summary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    list-style: none;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: color 0.15s ease;
+
+    &::-webkit-details-marker { display: none; }
+    &::after {
+      content: "";
+      flex-shrink: 0;
+      width: 0.4em;
+      height: 0.4em;
+      border-right: 1.5px solid currentColor;
+      border-bottom: 1.5px solid currentColor;
+      transform: translateY(-0.15em) rotate(45deg);
+      transition: transform 0.15s ease;
+    }
+    &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+    @media (hover: hover) {
+      &:hover { color: var(--color-text); }
+    }
+  }
+
+  &[open] summary::after { transform: translateY(0.1em) rotate(-135deg); }
+
+  & .carton-item__preview {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  & .carton-item__hide { display: none; }
+  &[open] .carton-item__preview { display: none; }
+  &[open] .carton-item__hide { display: inline; }
+
+  & .carton-item__meta { margin-top: var(--space-1); }
+}
+
+.carton-item__cost {
+  grid-area: cost;
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+
+  & small { font-weight: 400; color: var(--color-text-muted); }
+}
+
+.carton-item__actions {
+  grid-area: actions;
+  justify-content: flex-end;
+  gap: var(--space-2);
+
+  & form { margin: 0; }
+  /* Small outlined buttons; also beats the primary fill submit buttons get by default. */
+  & .btn {
+    min-height: 2.25rem;
+    padding-inline: var(--space-3);
+    border-color: var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: 0.85rem;
+    font-weight: 500;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.08s;
+
+    /* Soft tint instead of the global brightness() hover, which dims the whole button. */
+    &:hover, &:active { filter: none; }
+    @media (hover: hover) {
+      &:hover {
+        background: color-mix(in srgb, var(--color-text) 5%, var(--color-surface));
+        border-color: color-mix(in srgb, var(--color-text) 25%, var(--color-border));
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      }
+    }
+  }
+  & .btn-ghost--danger {
+    color: var(--color-danger);
+    border-color: color-mix(in srgb, var(--color-danger) 45%, var(--color-border));
+
+    @media (hover: hover) {
+      &:hover {
+        background: color-mix(in srgb, var(--color-danger) 8%, var(--color-surface));
+        border-color: var(--color-danger);
       }
     }
   }
