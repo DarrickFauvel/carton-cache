@@ -17,7 +17,7 @@ router.get("/receive", requireAuth, async (req, res) => {
   const { userRole } = req.session;
   const [locations, cartons] = await Promise.all([
     db.execute({ sql: "SELECT id, name FROM locations WHERE active = 1 AND org_id = ? ORDER BY name", args: [orgId] }),
-    db.execute({ sql: "SELECT id, name, sku, barcode, unit_cost FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId] }),
+    db.execute({ sql: "SELECT id, name, length_cm, width_cm, height_cm, barcode, unit_cost FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId] }),
   ]);
 
   let printLabelCarton = null;
@@ -64,7 +64,7 @@ router.get("/consume", requireAuth, async (req, res) => {
   const orgId = defined(req.session.orgId);
   const [locations, cartons] = await Promise.all([
     db.execute({ sql: "SELECT id, name FROM locations WHERE active = 1 AND org_id = ? ORDER BY name", args: [orgId] }),
-    db.execute({ sql: "SELECT id, name, sku, barcode FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId] }),
+    db.execute({ sql: "SELECT id, name, length_cm, width_cm, height_cm, barcode FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId] }),
   ]);
   res.render("pages/transactions/consume", {
     title: "Consume Stock",
@@ -116,7 +116,7 @@ async function renderTransfer(req, res, { error = null, values = {} } = {}) {
     // lot holding this type, so the page can filter the list by the chosen
     // "from" location and condition and cap the quantity.
     db.execute({
-      sql: `SELECT ct.id, ct.name, ct.sku, ct.barcode,
+      sql: `SELECT ct.id, ct.name, ct.length_cm, ct.width_cm, ct.height_cm, ct.barcode,
                    (SELECT group_concat(il.location_id || ':' || il.condition || ':' || il.quantity, ' ')
                       FROM inventory_lots il
                      WHERE il.carton_type_id = ct.id AND il.org_id = ct.org_id AND il.quantity > 0) AS stock
@@ -198,7 +198,7 @@ router.get("/adjust", requireRole("admin", "manager"), async (req, res) => {
   const orgId = defined(req.session.orgId);
   const [locations, cartons] = await Promise.all([
     db.execute({ sql: "SELECT id, name FROM locations WHERE active = 1 AND org_id = ? ORDER BY name", args: [orgId] }),
-    db.execute({ sql: "SELECT id, name, sku FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId] }),
+    db.execute({ sql: "SELECT id, name, length_cm, width_cm, height_cm FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId] }),
   ]);
   res.render("pages/transactions/adjust", {
     title: "Adjust Stock",

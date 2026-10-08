@@ -17,7 +17,7 @@
  *     informational rows, not clickable — there's no carton_type_id to fill.
  */
 
-import { parseUnit, toCm, fromCm } from "../lib/units.js";
+import { parseUnit, toCm, fromCm, cartonLabel } from "../lib/units.js";
 
 /**
  * @typedef {import("../types.js").CartonSuggestion} CartonSuggestion
@@ -161,8 +161,8 @@ class CartonSuggest extends HTMLElement {
         btn.type = "button";
         btn.className = "btn btn-ghost";
         const cut = carton.resize_height_cm != null ? ` · cut height to ${fromCm(carton.resize_height_cm, unit)} ${unit}` : "";
-        btn.textContent = `${carton.name}${carton.sku ? ` — ${carton.sku}` : ""} · ${this.#formatDims(carton, unit)}${cut} · ${carton.quantity} in stock`;
-        btn.addEventListener("click", () => this.#selectCarton(carton));
+        btn.textContent = `${cartonLabel(carton, unit)}${cut} · ${carton.quantity} in stock`;
+        btn.addEventListener("click", () => this.#selectCarton(carton, unit));
         li.appendChild(btn);
         list.appendChild(li);
       }
@@ -199,8 +199,11 @@ class CartonSuggest extends HTMLElement {
     return `${dims.join("×")} ${unit}`;
   }
 
-  /** @param {CartonSuggestion} carton */
-  #selectCarton(carton) {
+  /**
+   * @param {CartonSuggestion} carton
+   * @param {MeasurementUnit} unit
+   */
+  #selectCarton(carton, unit) {
     const targetId = this.getAttribute("target") ?? "";
     const select = /** @type {HTMLSelectElement | null} */ (document.getElementById(targetId));
     if (!select) return;
@@ -209,7 +212,7 @@ class CartonSuggest extends HTMLElement {
     if (!opt) {
       opt = document.createElement("option");
       opt.value = carton.id;
-      opt.textContent = carton.sku ? `${carton.name} — ${carton.sku}` : carton.name;
+      opt.textContent = cartonLabel(carton, unit);
       select.appendChild(opt);
     }
 

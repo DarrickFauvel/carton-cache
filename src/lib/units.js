@@ -29,3 +29,28 @@ export const toCm = (value, unit) => (unit === "cm" ? value : inToCm(value));
  * @returns {number}
  */
 export const fromCm = (cm, unit) => Math.round((unit === "cm" ? cm : cmToIn(cm)) * 100) / 100;
+
+/**
+ * "L × W × H unit" for a carton with stored cm dimensions, or null if any
+ * dimension is missing.
+ * @param {{ length_cm?: number | null; width_cm?: number | null; height_cm?: number | null }} carton
+ * @param {MeasurementUnit} unit
+ * @returns {string | null}
+ */
+export function formatDims(carton, unit) {
+  const dims = [carton.length_cm, carton.width_cm, carton.height_cm];
+  if (dims.some((d) => d == null)) return null;
+  return `${dims.map((cm) => fromCm(Number(cm), unit)).join(" × ")} ${unit}`;
+}
+
+/**
+ * How a carton type is named in pickers and lists: its name plus its
+ * dimensions, which tell cartons apart better than the SKU does.
+ * @param {{ name: string; length_cm?: number | null; width_cm?: number | null; height_cm?: number | null }} carton
+ * @param {MeasurementUnit} unit
+ * @returns {string}
+ */
+export function cartonLabel(carton, unit) {
+  const dims = formatDims(carton, unit);
+  return dims ? `${carton.name} — ${dims}` : carton.name;
+}

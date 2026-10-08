@@ -46,7 +46,7 @@
       <select id="carton_type_id" name="carton_type_id" required>
         <option value="">Select carton…</option>
         <% it.cartons.forEach(function(c) { %>
-        <option value="<%= c.id %>" data-stock="<%= c.stock || '' %>" <%= it.values.carton_type_id === c.id ? 'selected' : '' %>><%= c.name %><% if (c.sku) { %> — <%= c.sku %><% } %></option>
+        <option value="<%= c.id %>" data-stock="<%= c.stock || '' %>" <%= it.values.carton_type_id === c.id ? 'selected' : '' %>><%= it.cartonLabel(c) %></option>
         <% }) %>
       </select>
       <location-stock-filter location="from_location_id" condition="condition" target="carton_type_id" quantity="quantity"></location-stock-filter>

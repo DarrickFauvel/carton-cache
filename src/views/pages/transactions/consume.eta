@@ -35,7 +35,7 @@
         <select id="carton_type_id" name="carton_type_id" required>
           <option value="">Select or scan carton…</option>
           <% it.cartons.forEach(function(c) { %>
-          <option value="<%= c.id %>"><%= c.name %><% if (c.sku) { %> — <%= c.sku %><% } %></option>
+          <option value="<%= c.id %>"><%= it.cartonLabel(c) %></option>
           <% }) %>
         </select>
         <carton-scanner

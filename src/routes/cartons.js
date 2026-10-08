@@ -4,7 +4,7 @@ import { db } from "../db/client.js";
 import { ulid, now, str, defined } from "../lib/id.js";
 import * as cartonSuggest from "../services/carton-suggest.js";
 import { buildLabelCode } from "../lib/labels.js";
-import { parseUnit, toCm } from "../lib/units.js";
+import { parseUnit, toCm, cartonLabel } from "../lib/units.js";
 
 /** @typedef {import("../types.js").CartonType} CartonType */
 
@@ -68,11 +68,12 @@ router.get("/lookup", requireAuth, async (req, res) => {
   const barcode = String(req.query.barcode ?? "").trim();
   if (!barcode) return res.status(400).json({ error: "barcode required" });
   const result = await db.execute({
-    sql: "SELECT id, name, sku FROM carton_types WHERE barcode = ? AND org_id = ?",
+    sql: "SELECT id, name, length_cm, width_cm, height_cm FROM carton_types WHERE barcode = ? AND org_id = ?",
     args: [barcode, defined(req.session.orgId)],
   });
   if (!result.rows[0]) return res.status(404).json({ error: "No carton with that barcode." });
-  res.json(result.rows[0]);
+  const carton = /** @type {{ id: string; name: string; length_cm: number | null; width_cm: number | null; height_cm: number | null }} */ (/** @type {unknown} */ (result.rows[0]));
+  res.json({ id: carton.id, name: carton.name, label: cartonLabel(carton, parseUnit(req.session.orgUnit)) });
 });
 
 router.get("/suggest", requireAuth, async (req, res) => {
@@ -145,7 +146,7 @@ router.post("/", requireRole("admin", "manager"), async (req, res) => {
     });
   }
 
-  if (wantsJson) return res.json({ id, name: fields.name, sku: fields.sku });
+  if (wantsJson) return res.json({ id, name: fields.name, label: cartonLabel(fields, parseUnit(req.session.orgUnit)) });
   res.redirect("/cartons?saved=1");
 });
 

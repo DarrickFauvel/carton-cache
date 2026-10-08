@@ -152,7 +152,7 @@ function onSiteCard(c) {
   // Package dims as shipped: after cutting, the height is the cut height.
   const shipped = cut == null ? c : { ...c, height_cm: inToCm(cut) };
   card.append(
-    el("div", "name", c.sku ? `${c.name} (${c.sku})` : c.name),
+    el("div", "name", c.name),
     el("div", "meta", `${inchesLabel(c)} · ${c.quantity} in stock`)
   );
   if (cut != null) card.append(el("div", "cut", `Cut height down to ${cut} in`));

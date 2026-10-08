@@ -6,7 +6,7 @@
  *   </template>
  * </quick-create>
  *
- * On successful creation the server must return JSON: { id, name, sku? }
+ * On successful creation the server must return JSON: { id, name, label? }
  * The component appends a new <option> to the <select> identified by [target]
  * and selects it automatically.
  */
@@ -132,7 +132,7 @@ class QuickCreate extends HTMLElement {
           body: params.toString(),
         });
 
-        const json = /** @type {{ id?: string; name?: string; sku?: string; error?: string }} */ (await res.json());
+        const json = /** @type {{ id?: string; name?: string; label?: string; error?: string }} */ (await res.json());
 
         if (!res.ok) {
           errorEl.textContent = json.error ?? "Something went wrong.";
@@ -145,7 +145,7 @@ class QuickCreate extends HTMLElement {
         if (select && json.id && json.name) {
           const opt = document.createElement("option");
           opt.value = json.id;
-          opt.textContent = json.sku ? `${json.name} — ${json.sku}` : json.name;
+          opt.textContent = json.label ?? json.name;
           for (const o of select.options) o.selected = false;
           select.appendChild(opt);
           opt.selected = true;
