@@ -1,14 +1,16 @@
 ---
 name: ship
-description: Verify, commit, push, and open a GitHub PR for the current changes. Use when the user says to ship, open a PR, or send changes for review.
+description: Verify, commit, push, open a GitHub PR for the current changes, then squash-merge it into main. Use when the user says to ship, open a PR, or send changes for review.
 disable-model-invocation: true
 ---
 
-Ship the working-tree changes as a pull request, following this repo's workflow: a feature branch, one PR per change, squash-merged on GitHub.
+Ship the working-tree changes as a pull request and merge it, following this repo's workflow: a feature branch, one PR per change, squash-merged on GitHub.
+
+Arguments may include `--no-merge` (or the user may say "don't merge"): then stop after opening the PR.
 
 Arguments (optional): $ARGUMENTS. Treat any text here as a hint for the branch name or PR title.
 
-1. **Inspect.** Run `git status` and `git diff` (plus `git diff --staged`). If there's nothing to ship, say so and stop. Never stage `.env` or other secrets; if one shows up as untracked, leave it out and mention it.
+1. **Inspect.** Run `git status` and `git diff` (plus `git diff --staged`). If the working tree is clean but you're on a feature branch with commits not on `main` and no open PR yet (`gh pr view` fails), ship those commits: skip to verifying, then push and open the PR. If there's nothing to ship either way, say so and stop. Never stage `.env` or other secrets; if one shows up as untracked, leave it out and mention it.
 2. **Verify.** Run `npm run typecheck`. If it fails, fix errors in the code being shipped. If the errors are in unrelated code, stop and report them. There's no test suite or linter.
 3. **Build components if needed.** If anything under `src/components/` changed, run `npm run build` to make sure the bundle compiles. `public/js/components/` is gitignored, so the build output is not committed.
 4. **Branch.** Every new feature gets its own new branch: a short kebab-case name after the change (like the existing `carton-suggest-and-labels` and `add-org-name-header`), created with `git switch -c <branch>`. Uncommitted changes move to the new branch with it.
@@ -18,6 +20,7 @@ Arguments (optional): $ARGUMENTS. Treat any text here as a hint for the branch n
 5. **Commit.** Stage the relevant files by name rather than `git add -A`. Write an imperative, sentence-case subject in the style of `git log --oneline` (e.g. "Let orgs choose their name and show it in the header"), add a short body if the change needs explaining, and end with the attribution lines from the current system reminder.
 6. **Push.** Run `git push -u origin <branch>`.
 7. **Open the PR.** Run `gh pr create --base main` with the commit subject as the title and a body with a short **Summary** (bullets), a **Migrations** note if `src/db/migrations/` changed (production runs them on `npm start`), and a **Testing** note listing what you actually ran. End the body with the PR attribution line from the current system reminder.
-8. Report the PR URL.
+8. **Merge.** Unless told not to, squash-merge the PR: `gh pr merge <number> --squash --delete-branch`. This deletes the branch on GitHub and locally and switches to `main`. Then run `git pull --ff-only` so local `main` has the squash commit. If the merge fails (conflicts with `main`, the PR isn't mergeable), stop and report it rather than rebasing or force-pushing. If the PR included migrations, remind the user they run on the next production `npm start`.
+9. Report the PR URL and whether it was merged.
 
-Don't merge the PR, force-push, or push to `main` unless the user explicitly asks in this conversation.
+Don't force-push or push directly to `main`; changes reach `main` only through the squash-merged PR.
