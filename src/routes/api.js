@@ -97,15 +97,23 @@ router.post("/transactions/consume", requireApiRole("admin", "manager", "staff")
   if (!canUseLocation) return res.status(400).json({ error: "Unknown location." });
   if (carton.rows.length === 0) return res.status(400).json({ error: "Unknown carton type." });
 
-  const transactionId = await inventory.consume({
-    orgId,
-    locationId,
-    cartonTypeId,
-    condition,
-    quantity,
-    userId: defined(req.session.userId),
-    notes,
-  });
+  let transactionId;
+  try {
+    transactionId = await inventory.consume({
+      orgId,
+      locationId,
+      cartonTypeId,
+      condition,
+      quantity,
+      userId: defined(req.session.userId),
+      notes,
+    });
+  } catch (err) {
+    if (err instanceof inventory.InsufficientStockError) {
+      return res.status(409).json({ error: err.message, available: err.available });
+    }
+    throw err;
+  }
   res.status(201).json({ transaction_id: transactionId });
 });
 

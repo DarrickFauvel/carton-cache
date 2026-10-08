@@ -145,11 +145,31 @@ export async function receive(args) {
 /**
  * @param {ConsumeArgs} args
  * @returns {Promise<string>}
+ * @throws {InsufficientStockError} if the lot holds fewer than `quantity`
  */
 export async function consume(args) {
   const ts = now();
 
-  const txId = await insertTx(
+  // Decrement only if the lot holds enough, in one statement (see transfer()).
+  // Without this, a consume whose location/condition matches no lot would
+  // silently record a transaction while leaving stock untouched.
+  const decremented = await db.execute({
+    sql: `
+      UPDATE inventory_lots
+      SET quantity = quantity - ?, updated_at = ?
+      WHERE location_id = ? AND carton_type_id = ? AND condition = ? AND org_id = ? AND quantity >= ?
+    `,
+    args: [args.quantity, ts, args.locationId, args.cartonTypeId, args.condition, args.orgId, args.quantity],
+  });
+  if (decremented.rowsAffected === 0) {
+    const current = await db.execute({
+      sql: "SELECT quantity FROM inventory_lots WHERE location_id = ? AND carton_type_id = ? AND condition = ? AND org_id = ?",
+      args: [args.locationId, args.cartonTypeId, args.condition, args.orgId],
+    });
+    throw new InsufficientStockError(Number(current.rows[0]?.quantity ?? 0));
+  }
+
+  return insertTx(
     args.orgId,
     "consume",
     args.cartonTypeId,
@@ -159,17 +179,6 @@ export async function consume(args) {
     args.userId,
     { notes: args.notes }
   );
-
-  await db.execute({
-    sql: `
-      UPDATE inventory_lots
-      SET quantity = MAX(0, quantity - ?), updated_at = ?
-      WHERE location_id = ? AND carton_type_id = ? AND condition = ?
-    `,
-    args: [args.quantity, ts, args.locationId, args.cartonTypeId, args.condition],
-  });
-
-  return txId;
 }
 
 /** Thrown when a stock movement asks for more than the source lot holds. */
