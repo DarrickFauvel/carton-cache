@@ -38,7 +38,7 @@ router.get("/receive", requireAuth, async (req, res) => {
     cartons: cartons.rows,
     canCreateLocation: userRole === "admin",
     canCreateCarton: userRole === "admin" || userRole === "manager",
-    componentScripts: ["barcode-scanner", "quick-create", "carton-scanner"],
+    componentScripts: ["barcode-scanner", "quick-create", "carton-scanner", "qty-stepper"],
     printLabelCarton,
     // Preselect the location last received into, for the next carton and
     // later visits.
