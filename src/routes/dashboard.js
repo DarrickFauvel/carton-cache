@@ -38,7 +38,7 @@ const CONDITIONS = ["new", "good", "fair", "poor"];
 /**
  * @typedef {object} StockLocation
  * @property {string} name
- * @property {StockRow[]} rows smallest carton first
+ * @property {StockRow[]} rows by label source, then size (see byLabelThenSize)
  */
 
 const router = Router();
@@ -145,6 +145,19 @@ router.get("/", requireAuth, async (req, res) => {
   /** @param {StockRow} r */
   const volume = (r) =>
     r.length_cm != null && r.width_cm != null && r.height_cm != null ? r.length_cm * r.width_cm * r.height_cm : Infinity;
+  /** The "ama" of "ama-12x9x6"; null without a label code. @param {StockRow} r */
+  const source = (r) => (r.label_code ? r.label_code.slice(0, r.label_code.lastIndexOf("-")) : null);
+  /**
+   * Rows with a label code first, alphabetically by source, then smallest
+   * first; rows without one after, smallest first. Ties go by name.
+   * @param {StockRow} a
+   * @param {StockRow} b
+   */
+  const byLabelThenSize = (a, b) => {
+    const sa = source(a), sb = source(b);
+    if ((sa == null) !== (sb == null)) return sa == null ? 1 : -1;
+    return (sa ?? "").localeCompare(sb ?? "") || volume(a) - volume(b) || a.name.localeCompare(b.name);
+  };
   for (const row of rows.values()) {
     row.conditions = CONDITIONS.filter((c) => row.byCondition.has(c)).map((c) => ({
       condition: c,
@@ -153,7 +166,7 @@ router.get("/", requireAuth, async (req, res) => {
   }
   const sortedLocations = [...locations.values()].sort((a, b) => a.name.localeCompare(b.name));
   for (const location of sortedLocations) {
-    location.rows.sort((a, b) => volume(a) - volume(b) || a.name.localeCompare(b.name));
+    location.rows.sort(byLabelThenSize);
   }
   lowStock.sort((a, b) => a.quantity - b.quantity || a.location_name.localeCompare(b.location_name));
 
