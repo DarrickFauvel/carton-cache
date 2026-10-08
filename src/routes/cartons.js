@@ -186,7 +186,7 @@ router.post("/", requireRole("admin", "manager"), async (req, res) => {
   }
 
   if (wantsJson) return res.json({ id, name: fields.name, label: cartonLabel(fields, parseUnit(req.session.orgUnit)) });
-  res.redirect("/cartons?saved=1");
+  res.redirect(`/cartons?saved=1#carton-${id}`);
 });
 
 router.get("/:id/edit", requireRole("admin", "manager"), async (req, res) => {
@@ -242,7 +242,8 @@ router.post("/:id/edit", requireRole("admin", "manager"), async (req, res) => {
   } else {
     await db.execute({ sql: "UPDATE carton_types SET archived_at = NULL WHERE id = ? AND org_id = ?", args: [id, orgId] });
   }
-  res.redirect("/cartons?saved=1");
+  // Land back on the edited row rather than the top of the list.
+  res.redirect(`/cartons?saved=1#carton-${id}`);
 });
 
 router.post("/:id/delete", requireRole("admin", "manager"), async (req, res) => {
@@ -274,7 +275,7 @@ router.post("/:id/unarchive", requireRole("admin", "manager"), async (req, res) 
     sql: "UPDATE carton_types SET archived_at = NULL WHERE id = ? AND org_id = ?",
     args: [str(req.params.id), defined(req.session.orgId)],
   });
-  res.redirect("/cartons?saved=1");
+  res.redirect(`/cartons?saved=1#carton-${str(req.params.id)}`);
 });
 
 export default router;

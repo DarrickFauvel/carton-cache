@@ -38,7 +38,7 @@
     </thead>
     <tbody>
       <% it.cartons.forEach(function(c) { %>
-      <tr>
+      <tr id="carton-<%= c.id %>">
         <td data-label="Name"><strong><%= c.name %></strong><% if (c.archived_at != null) { %> <small class="badge">Archived</small><% } else if (Number(c.single_use) === 1) { %> <small class="badge">One-time use</small><% } %><% if (c.notes) { %><br><small><%= c.notes %></small><% } %></td>
         <td data-label="SKU"><% if (c.sku) { %><code><%= c.sku %></code><% } else { %>—<% } %></td>
         <td data-label="Barcode"><% if (c.barcode) { %><code><%= c.barcode %></code><% } else { %>—<% } %></td>
