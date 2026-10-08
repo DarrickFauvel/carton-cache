@@ -3,7 +3,8 @@ import { cmToIn } from "./units.js";
 /** @typedef {import("../types.js").CartonType} CartonType */
 
 /**
- * Formats a "<source>-<LxWxH in>" label code, e.g. "ama-10x6x4". Shared with
+ * Formats a "<source>-<LxWxH in>" label code, e.g. "ama-10x6x4", with the
+ * source lowercased. Shared with
  * the carton form's live preview (src/components/label-preview.js).
  * @param {string | null} sourceCode
  * @param {(number | null)[]} dimsCm length, width, height
@@ -12,7 +13,7 @@ import { cmToIn } from "./units.js";
 export function formatLabelCode(sourceCode, dimsCm) {
   if (!sourceCode || dimsCm.some((d) => d == null || !Number.isFinite(d))) return null;
   const [l, w, h] = dimsCm.map((cm) => Math.round(cmToIn(Number(cm))));
-  return `${sourceCode}-${l}x${w}x${h}`;
+  return `${sourceCode.toLowerCase()}-${l}x${w}x${h}`;
 }
 
 /**

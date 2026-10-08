@@ -99,7 +99,7 @@
               <div class="form-group">
                 <label for="qc_source_code">Source code <small>(optional)</small></label>
                 <input id="qc_source_code" name="source_code" type="text" placeholder="ama, wal, non…"
-                       list="qc_source_code_options" autocomplete="off" />
+                       list="qc_source_code_options" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" />
                 <datalist id="qc_source_code_options">
 <% it.sourceCodes.forEach(function(code) { %>
                   <option value="<%= code %>"></option>
