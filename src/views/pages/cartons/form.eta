@@ -114,7 +114,7 @@
         <label for="source_code">Source code <small>(optional)</small></label>
         <input id="source_code" type="text" name="source_code"
                value="<%= it.carton ? (it.carton.source_code || '') : '' %>" placeholder="ama, wal, non…"
-               list="source_code_options" autocomplete="off" />
+               list="source_code_options" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" />
         <datalist id="source_code_options">
 <% it.sourceCodes.forEach(function(code) { %>
           <option value="<%= code %>"></option>

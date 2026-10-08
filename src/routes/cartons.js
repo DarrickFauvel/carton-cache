@@ -50,7 +50,7 @@ function parseCartonBody(body) {
     wall_thickness_cm: Number.isFinite(wall) && wall >= 0 ? toCm(wall, unit) : DEFAULT_WALL_THICKNESS_CM,
     unit_cost:   unit_cost ? parseFloat(unit_cost) : 0,
     notes:       notes.trim()     || null,
-    source_code: source_code.trim() || null,
+    source_code: source_code.trim().toLowerCase() || null,
     resizable:   resizable ? 1 : 0,
     single_use:  single_use ? 1 : 0,
   };
