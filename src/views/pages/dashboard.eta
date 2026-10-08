@@ -47,7 +47,13 @@
 <% } %>
 
 <% if (it.locations.length > 0) { %>
-<h2 class="inventory-heading">Inventory</h2>
+<div class="inventory-header">
+  <h2 class="inventory-heading">Inventory</h2>
+  <nav class="sort-toggle" aria-label="Sort by size">
+    <a href="/?sort=asc" <%~ it.sort === 'asc' ? 'aria-current="true"' : '' %>>Smallest first</a>
+    <a href="/?sort=desc" <%~ it.sort === 'desc' ? 'aria-current="true"' : '' %>>Largest first</a>
+  </nav>
+</div>
 <% } %>
 
 <% it.locations.forEach(function(loc) { %>

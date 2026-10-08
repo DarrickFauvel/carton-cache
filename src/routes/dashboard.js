@@ -43,13 +43,16 @@ const CONDITIONS = ["new", "good", "fair", "poor"];
  * @property {boolean} sub a sublocation, listed right after its parent
  * @property {string} sortKey parent's name (or its own), so sublocations follow their parent
  * @property {string} ownName
- * @property {StockRow[]} rows smallest first, like cartons in a stack (see bySize)
+ * @property {StockRow[]} rows by size, smallest or largest first (see bySize)
  */
 
 const router = Router();
 
 router.get("/", requireAuth, async (req, res) => {
   const orgId = defined(req.session.orgId);
+  // ?sort= changes the order and is remembered for later visits.
+  if (req.query.sort === "asc" || req.query.sort === "desc") req.session.dashboardSort = req.query.sort;
+  const sort = req.session.dashboardSort ?? "asc";
 
   const [lotResult, thresholdResult] = await Promise.all([
     db.execute({
@@ -160,16 +163,17 @@ router.get("/", requireAuth, async (req, res) => {
     });
   }
 
+  const dir = sort === "desc" ? -1 : 1;
   /**
-   * By length, then width, then height, smallest first, the way cartons are
-   * ordered in a stack; cartons with no size last. Ties go by name.
+   * By length, then width, then height, smallest first (or largest first for
+   * "desc"); cartons with no size last either way. Ties go by name.
    * @param {StockRow} a
    * @param {StockRow} b
    */
   const bySize = (a, b) => {
     if (!a.size_cm || !b.size_cm) return (a.size_cm ? -1 : b.size_cm ? 1 : 0) || a.name.localeCompare(b.name);
     const [al, aw, ah] = a.size_cm, [bl, bw, bh] = b.size_cm;
-    return al - bl || aw - bw || ah - bh || a.name.localeCompare(b.name);
+    return dir * (al - bl || aw - bw || ah - bh) || a.name.localeCompare(b.name);
   };
   for (const row of rows.values()) {
     row.conditions = CONDITIONS.filter((c) => row.byCondition.has(c)).map((c) => ({
@@ -189,6 +193,7 @@ router.get("/", requireAuth, async (req, res) => {
     title: "Dashboard",
     locations: sortedLocations,
     lowStock,
+    sort,
   });
 });
 

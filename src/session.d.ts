@@ -18,5 +18,7 @@ declare module "express-session" {
     lastTransferFromLocationId?: string;
     /** "To" location of the last transfer, preselected on the next Transfer form. Unset until the first transfer. */
     lastTransferToLocationId?: string;
+    /** Dashboard row order by size: "asc" smallest first (the default), "desc" largest first. */
+    dashboardSort?: "asc" | "desc";
   }
 }
