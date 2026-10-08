@@ -169,10 +169,9 @@ function onSiteCard(c) {
     width_cm:  outerCm(c.width_cm, c.wall_thickness_cm),
     height_cm: outerCm(insideHeightCm, c.wall_thickness_cm),
   };
-  card.append(
-    el("div", "name", c.name),
-    el("div", "meta", `${onSiteSizeLabel(c)} · ${c.quantity} in stock`)
-  );
+  card.append(el("div", "name", c.name));
+  if (c.label_code) card.append(el("div", "label-code", c.label_code));
+  card.append(el("div", "meta", `${onSiteSizeLabel(c)} · ${c.quantity} in stock`));
   if (cut != null) card.append(el("div", "cut", `Cut height down to ${cut} in`));
   card.append(el("div", "meta", `eBay: ${ebayDims(shipped)}`), copyButton(shipped));
   return card;

@@ -82,6 +82,7 @@ button.link { background: none; border: 0; color: var(--accent); padding: 0; fon
 
 .card .name { font-weight: 600; }
 .card .meta { color: var(--muted); font-size: 12px; grid-column: 1; }
+.card .label-code { font-family: ui-monospace, monospace; font-weight: 600; font-size: 13px; grid-column: 1; }
 .card .cut { font-weight: 600; font-size: 13px; grid-column: 1; }
-.card button { grid-row: 1 / span 4; grid-column: 2; }
+.card button { grid-row: 1 / span 5; grid-column: 2; }
 footer { margin-top: 24px; }
