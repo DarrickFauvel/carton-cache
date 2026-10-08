@@ -267,9 +267,16 @@ changeUrl.addEventListener("click", async () => {
   show("setup");
 });
 
-// Coming back to the panel after logging in in a tab: re-check.
+// Coming back to the panel: re-check login if we were waiting on it, or
+// reload locations so ones added (or assigned) since the panel opened show up.
 window.addEventListener("focus", () => {
-  if (!sections.login.hidden) refresh();
+  if (!sections.login.hidden) {
+    refresh();
+  } else if (!sections.main.hidden) {
+    loadLocations().catch((err) => {
+      if (err instanceof NotLoggedInError) refresh();
+    });
+  }
 });
 
 unitSelect.addEventListener("change", () => {
