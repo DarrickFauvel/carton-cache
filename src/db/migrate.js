@@ -14,7 +14,9 @@ async function migrate() {
       await db.executeMultiple(sql);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes("duplicate column name")) {
+      // migrations re-run on every start, so an already-applied ADD COLUMN
+      // or DROP COLUMN fails like this and is skipped.
+      if (msg.includes("duplicate column name") || msg.includes("no such column")) {
         console.log("  Already applied, skipping.");
       } else {
         throw err;

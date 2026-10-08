@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run typecheck` — type-check the whole `src/` tree via `tsc` (see "Types" below). This is the only "compile" step in this project; it emits nothing (`noEmit: true`), it only reports errors.
 - `npm run build` — bundles the browser Web Components (`src/components/*.js`) into `public/js/components/*.js` via esbuild. Run this after changing anything in `src/components/`; the server does not do this automatically.
 - `npm run build:extension` — bundles the Chrome extension's scripts (`extension/src/*.js`) into `extension/dist/` (gitignored). Load it unpacked from `extension/` in `chrome://extensions`.
-- `npm run migrate` — applies any unapplied files in `src/db/migrations/` to the Turso DB pointed at by `.env`. Safe to re-run: already-applied `ALTER TABLE ADD COLUMN` statements are caught and skipped (see `src/db/migrate.js`), though this only handles the "duplicate column name" case, not other partial-migration failures.
+- `npm run migrate` — applies any unapplied files in `src/db/migrations/` to the Turso DB pointed at by `.env`. Safe to re-run: already-applied `ALTER TABLE ADD COLUMN`/`DROP COLUMN` statements are caught and skipped (see `src/db/migrate.js`), though this only handles the "duplicate column name"/"no such column" cases, not other partial-migration failures.
 - `npm start` — runs `migrate` then starts the server; this is the production entrypoint.
 - `npm run generate-vapid` — prints a new VAPID keypair for Web Push, to be pasted into `.env`.
 - There is no test suite and no linter configured in this repo.
