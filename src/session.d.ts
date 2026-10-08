@@ -15,5 +15,7 @@ declare module "express-session" {
     lastReceiveLocationId?: string;
     /** Location last consumed from, preselected on the next Consume form. Unset until the first consume. */
     lastConsumeLocationId?: string;
+    /** "From" location of the last transfer, preselected on the next Transfer form. Unset until the first transfer. */
+    lastTransferFromLocationId?: string;
   }
 }
