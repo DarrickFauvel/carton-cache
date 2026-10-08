@@ -33,7 +33,7 @@
                value="<%= it.carton ? (it.carton.barcode || '') : '' %>"
                inputmode="numeric" autocomplete="off" />
         <barcode-scanner target="barcode">
-          <button type="button" class="btn">Scan</button>
+          <button type="button" class="btn btn--scan" aria-label="Scan barcode">Scan</button>
         </barcode-scanner>
       </div>
     </div>
@@ -54,14 +54,15 @@
     <div class="form-group">
       <label for="unit_cost">Unit cost <small>(optional)</small></label>
       <input id="unit_cost" type="number" name="unit_cost" inputmode="decimal" min="0" step="0.01"
-             value="<%= it.carton ? (it.carton.unit_cost || '') : '' %>" />
+             value="<%= it.carton && it.carton.unit_cost != null && it.carton.unit_cost !== '' ? it.carton.unit_cost : 0 %>" />
     </div>
 
     <fieldset class="form-group">
       <legend>Outer dimensions (<%= it.unit %>) <small>(optional)</small></legend>
       <input type="hidden" name="dim_unit" value="<%= it.unit %>" />
       <div class="dims-row">
-<% ['length', 'width', 'height'].forEach(function(dim) {
+<% var dims = ['length', 'width', 'height'];
+   dims.forEach(function(dim) {
      var c = it.carton;
      // Re-rendered after a failed POST, carton holds the raw submitted values.
      var value = !c ? '' : c[dim] !== undefined ? c[dim] : c[dim + '_cm'] ? it.toUnit(Number(c[dim + '_cm'])) : ''; %>
