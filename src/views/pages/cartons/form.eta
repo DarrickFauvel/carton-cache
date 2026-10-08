@@ -119,6 +119,15 @@
     </div>
 
     <div class="form-group">
+      <label>
+        <input type="checkbox" name="single_use" value="1"
+               <%= it.carton && Number(it.carton.single_use) === 1 ? 'checked' : '' %> />
+        One-time use
+      </label>
+      <small>For cartons you won't restock, like an unbranded box that came with an item. Once its stock runs out it's archived: hidden from Consume, Transfer and Adjust, with its history kept. Receiving it again brings it back.</small>
+    </div>
+
+    <div class="form-group">
       <label for="notes">Notes <small>(optional)</small></label>
       <textarea id="notes" name="notes" rows="2"><%= it.carton ? (it.carton.notes || '') : '' %></textarea>
     </div>

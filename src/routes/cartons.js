@@ -4,6 +4,7 @@ import { db } from "../db/client.js";
 import { ulid, now, str, defined } from "../lib/id.js";
 import * as cartonSuggest from "../services/carton-suggest.js";
 import { buildLabelCode } from "../lib/labels.js";
+import { archiveIfDepleted } from "../services/inventory.js";
 import { parseUnit, toCm, fromCm, cartonLabel, DEFAULT_WALL_THICKNESS_CM } from "../lib/units.js";
 
 /** @typedef {import("../types.js").CartonType} CartonType */
@@ -35,6 +36,7 @@ function parseCartonBody(body) {
   const notes       = str(body.notes);
   const source_code = str(body.source_code);
   const resizable   = str(body.resizable);
+  const single_use  = str(body.single_use);
   return {
     name:        name.trim(),
     sku:         sku.trim()       || null,
@@ -50,6 +52,7 @@ function parseCartonBody(body) {
     notes:       notes.trim()     || null,
     source_code: source_code.trim() || null,
     resizable:   resizable ? 1 : 0,
+    single_use:  single_use ? 1 : 0,
   };
 }
 
@@ -130,7 +133,7 @@ router.get("/:id/label", requireAuth, async (req, res) => {
 });
 
 router.get("/", requireAuth, async (req, res) => {
-  const result = await db.execute({ sql: "SELECT * FROM carton_types WHERE org_id = ? ORDER BY name", args: [defined(req.session.orgId)] });
+  const result = await db.execute({ sql: "SELECT * FROM carton_types WHERE org_id = ? ORDER BY archived_at IS NOT NULL, name", args: [defined(req.session.orgId)] });
   res.render("pages/cartons/index", {
     title: "Carton Types",
     cartons: withLabelCode(result.rows),
@@ -164,12 +167,12 @@ router.post("/", requireRole("admin", "manager"), async (req, res) => {
     await db.execute({
       sql: `INSERT INTO carton_types (id, name, sku, barcode, length_cm, width_cm, height_cm,
                                       printed_length_cm, printed_width_cm, printed_height_cm, wall_thickness_cm,
-                                      unit_cost, notes, source_code, resizable, org_id, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                                      unit_cost, notes, source_code, resizable, single_use, org_id, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [id, fields.name, fields.sku, fields.barcode,
              fields.length_cm, fields.width_cm, fields.height_cm,
              fields.printed_length_cm, fields.printed_width_cm, fields.printed_height_cm, fields.wall_thickness_cm,
-             fields.unit_cost, fields.notes, fields.source_code, fields.resizable,
+             fields.unit_cost, fields.notes, fields.source_code, fields.resizable, fields.single_use,
              defined(req.session.orgId), now()],
     });
   } catch (err) {
@@ -217,12 +220,12 @@ router.post("/:id/edit", requireRole("admin", "manager"), async (req, res) => {
   try {
     await db.execute({
       sql: `UPDATE carton_types SET name=?, sku=?, barcode=?, length_cm=?, width_cm=?, height_cm=?,
-                   printed_length_cm=?, printed_width_cm=?, printed_height_cm=?, wall_thickness_cm=?, unit_cost=?, notes=?, source_code=?, resizable=?
+                   printed_length_cm=?, printed_width_cm=?, printed_height_cm=?, wall_thickness_cm=?, unit_cost=?, notes=?, source_code=?, resizable=?, single_use=?
             WHERE id=? AND org_id=?`,
       args: [fields.name, fields.sku, fields.barcode,
              fields.length_cm, fields.width_cm, fields.height_cm,
              fields.printed_length_cm, fields.printed_width_cm, fields.printed_height_cm, fields.wall_thickness_cm,
-             fields.unit_cost, fields.notes, fields.source_code, fields.resizable, id, orgId],
+             fields.unit_cost, fields.notes, fields.source_code, fields.resizable, fields.single_use, id, orgId],
     });
   } catch (err) {
     const result = await db.execute({ sql: "SELECT * FROM carton_types WHERE id = ? AND org_id = ?", args: [id, orgId] });
@@ -231,6 +234,13 @@ router.post("/:id/edit", requireRole("admin", "manager"), async (req, res) => {
       carton: { ...result.rows[0], ...req.body },
       error: constraintMessage(err) ?? "Could not save changes. Please try again.",
     });
+  }
+  if (fields.single_use) {
+    // Marking an already-depleted carton as one-time use archives it now
+    // rather than waiting for its next stock movement.
+    await archiveIfDepleted(orgId, id);
+  } else {
+    await db.execute({ sql: "UPDATE carton_types SET archived_at = NULL WHERE id = ? AND org_id = ?", args: [id, orgId] });
   }
   res.redirect("/cartons?saved=1");
 });
@@ -246,7 +256,7 @@ router.post("/:id/delete", requireRole("admin", "manager"), async (req, res) => 
   ]);
 
   if (Number(txCount.rows[0]?.n) > 0 || Number(lotCount.rows[0]?.n) > 0) {
-    const result = await db.execute({ sql: "SELECT * FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId] });
+    const result = await db.execute({ sql: "SELECT * FROM carton_types WHERE org_id = ? ORDER BY archived_at IS NOT NULL, name", args: [orgId] });
     return res.render("pages/cartons/index", {
       title: "Carton Types",
       cartons: withLabelCode(result.rows),
@@ -256,6 +266,14 @@ router.post("/:id/delete", requireRole("admin", "manager"), async (req, res) => 
   }
 
   await db.execute({ sql: "DELETE FROM carton_types WHERE id = ? AND org_id = ?", args: [id, orgId] });
+  res.redirect("/cartons?saved=1");
+});
+
+router.post("/:id/unarchive", requireRole("admin", "manager"), async (req, res) => {
+  await db.execute({
+    sql: "UPDATE carton_types SET archived_at = NULL WHERE id = ? AND org_id = ?",
+    args: [str(req.params.id), defined(req.session.orgId)],
+  });
   res.redirect("/cartons?saved=1");
 });
 

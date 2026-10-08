@@ -18,7 +18,7 @@ router.get("/", requireRole("admin", "manager"), async (req, res) => {
   });
   const [locations, cartons] = await Promise.all([
     db.execute({ sql: "SELECT id, name FROM locations WHERE active = 1 AND org_id = ? ORDER BY name", args: [orgId] }),
-    db.execute({ sql: "SELECT id, name FROM carton_types WHERE org_id = ? ORDER BY name", args: [orgId] }),
+    db.execute({ sql: "SELECT id, name FROM carton_types WHERE org_id = ? AND archived_at IS NULL ORDER BY name", args: [orgId] }),
   ]);
   res.render("pages/alerts/index", {
     title: "Alert Thresholds",

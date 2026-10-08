@@ -139,7 +139,32 @@ export async function receive(args) {
     ],
   });
 
+  // Receiving a one-time-use carton again brings it back from the archive.
+  await db.execute({
+    sql: "UPDATE carton_types SET archived_at = NULL WHERE id = ? AND org_id = ? AND archived_at IS NOT NULL",
+    args: [args.cartonTypeId, args.orgId],
+  });
+
   return txId;
+}
+
+/**
+ * Archive a single-use carton type once no lot anywhere in the org holds any
+ * of it. A no-op for regular carton types, ones already archived, ones still
+ * in stock, and ones never received (no lots, so SUM is NULL rather than 0).
+ * @param {string} orgId
+ * @param {string} cartonTypeId
+ * @returns {Promise<void>}
+ */
+export async function archiveIfDepleted(orgId, cartonTypeId) {
+  await db.execute({
+    sql: `
+      UPDATE carton_types SET archived_at = ?
+      WHERE id = ? AND org_id = ? AND single_use = 1 AND archived_at IS NULL
+        AND (SELECT SUM(quantity) FROM inventory_lots WHERE carton_type_id = ? AND org_id = ?) = 0
+    `,
+    args: [now(), cartonTypeId, orgId, cartonTypeId, orgId],
+  });
 }
 
 /**
@@ -169,7 +194,7 @@ export async function consume(args) {
     throw new InsufficientStockError(Number(current.rows[0]?.quantity ?? 0));
   }
 
-  return insertTx(
+  const txId = await insertTx(
     args.orgId,
     "consume",
     args.cartonTypeId,
@@ -179,6 +204,10 @@ export async function consume(args) {
     args.userId,
     { notes: args.notes }
   );
+
+  await archiveIfDepleted(args.orgId, args.cartonTypeId);
+
+  return txId;
 }
 
 /** Thrown when a stock movement asks for more than the source lot holds. */
@@ -303,6 +332,8 @@ export async function adjust(args) {
       args.newQuantity, ts,
     ],
   });
+
+  await archiveIfDepleted(args.orgId, args.cartonTypeId);
 
   return txId;
 }

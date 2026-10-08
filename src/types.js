@@ -47,6 +47,8 @@
  * @property {string | null} notes
  * @property {string | null} source_code
  * @property {1 | 0} resizable height can be cut down to fit the item
+ * @property {1 | 0} single_use one-time use: archived once its stock runs out
+ * @property {number | null} archived_at set when a single-use carton's stock ran out; hidden from pickers
  * @property {number} created_at
  */
 
