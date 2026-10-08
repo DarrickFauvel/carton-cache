@@ -21,7 +21,7 @@ const CONDITIONS = ["new", "good", "fair", "poor"];
  * @property {number | null} length_cm
  * @property {number | null} width_cm
  * @property {number | null} height_cm
- * @property {number | null} size_cm3 volume of the printed size (as on the label), else the inside size; sort key
+ * @property {[number, number, number] | null} size_cm printed size (as on the label), else the inside size; sort key
  * @property {{ condition: Condition; quantity: number }[]} conditions in CONDITIONS order, only those in stock
  * @property {number} total
  * @property {boolean} low at or below one of its alert thresholds
@@ -100,8 +100,8 @@ router.get("/", requireAuth, async (req, res) => {
     let row = rows.get(key);
     if (!row) {
       const num = (/** @type {unknown} */ v) => (v == null ? null : Number(v));
-      /** @param {unknown[]} dims */
-      const vol = (dims) => (dims.every((d) => d != null) ? dims.reduce((/** @type {number} */ v, d) => v * Number(d), 1) : null);
+      /** @param {unknown[]} d @returns {[number, number, number] | null} */
+      const dims = (d) => (d.every((x) => x != null) ? [Number(d[0]), Number(d[1]), Number(d[2])] : null);
       row = {
         id: `stock-${locationId}-${r.carton_type_id}`,
         carton_type_id: String(r.carton_type_id),
@@ -110,7 +110,7 @@ router.get("/", requireAuth, async (req, res) => {
         length_cm: num(r.length_cm),
         width_cm: num(r.width_cm),
         height_cm: num(r.height_cm),
-        size_cm3: vol([r.printed_length_cm, r.printed_width_cm, r.printed_height_cm]) ?? vol([r.length_cm, r.width_cm, r.height_cm]),
+        size_cm: dims([r.printed_length_cm, r.printed_width_cm, r.printed_height_cm]) ?? dims([r.length_cm, r.width_cm, r.height_cm]),
         conditions: [],
         total: 0,
         low: false,
@@ -161,15 +161,16 @@ router.get("/", requireAuth, async (req, res) => {
   }
 
   /**
-   * Smallest first, the way cartons are ordered in a stack; cartons with no
-   * size last. Ties go by label code, then name.
+   * By length, then width, then height, smallest first, the way cartons are
+   * ordered in a stack; cartons with no size last. Ties go by name.
    * @param {StockRow} a
    * @param {StockRow} b
    */
-  const bySize = (a, b) =>
-    (a.size_cm3 ?? Infinity) - (b.size_cm3 ?? Infinity) ||
-    (a.label_code ?? "").localeCompare(b.label_code ?? "") ||
-    a.name.localeCompare(b.name);
+  const bySize = (a, b) => {
+    if (!a.size_cm || !b.size_cm) return (a.size_cm ? -1 : b.size_cm ? 1 : 0) || a.name.localeCompare(b.name);
+    const [al, aw, ah] = a.size_cm, [bl, bw, bh] = b.size_cm;
+    return al - bl || aw - bw || ah - bh || a.name.localeCompare(b.name);
+  };
   for (const row of rows.values()) {
     row.conditions = CONDITIONS.filter((c) => row.byCondition.has(c)).map((c) => ({
       condition: c,

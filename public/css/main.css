@@ -1302,7 +1302,7 @@ qty-stepper {
 
 /* ── Dashboard stock list ─────────────────────────────────────────────────── */
 /* One row per carton type at a location: label code (or size) and name, a chip per condition
-   in stock, and the total. Smallest carton first, sorted by the route. */
+   in stock, and the total. Sorted by length, then width, then height, by the route. */
 .stock-list {
   list-style: none;
   margin: 0;
