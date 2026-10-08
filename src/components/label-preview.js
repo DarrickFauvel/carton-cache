@@ -50,7 +50,7 @@ class LabelPreview extends HTMLElement {
     const code = formatLabelCode(source, dims);
     this.textContent = code
       ? `Label: ${code}`
-      : `Label: ${source}-… (enter the printed or inside dimensions to finish the label)`;
+      : `Label: …-${source.toLowerCase()} (enter the printed or inside dimensions to finish the label)`;
   }
 }
 
