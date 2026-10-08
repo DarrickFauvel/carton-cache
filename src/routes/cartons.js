@@ -62,7 +62,7 @@ function parseCartonBody(body) {
  * @param {string} orgId
  * @returns {Promise<{ sourceCodes: string[] }>}
  */
-async function labelCodeOptions(orgId) {
+export async function labelCodeOptions(orgId) {
   const sources = await db.execute({ sql: "SELECT DISTINCT source_code AS code FROM carton_types WHERE org_id = ? AND source_code IS NOT NULL ORDER BY code", args: [orgId] });
   return { sourceCodes: sources.rows.map((r) => String(r.code)) };
 }
@@ -205,7 +205,15 @@ router.post("/", requireRole("admin", "manager"), async (req, res) => {
     });
   }
 
-  if (wantsJson) return res.json({ id, name: fields.name, label: cartonLabel(fields, parseUnit(req.session.orgUnit)) });
+  if (wantsJson) {
+    const labelCode = buildLabelCode(/** @type {CartonType} */ ({ id, ...fields }));
+    return res.json({
+      id,
+      name: fields.name,
+      label: cartonLabel(fields, parseUnit(req.session.orgUnit)),
+      ...(labelCode && { printUrl: `/cartons/${id}/label`, printLabel: `Print label (${labelCode})` }),
+    });
+  }
   res.redirect(`/cartons?saved=1#carton-${id}`);
 });
 

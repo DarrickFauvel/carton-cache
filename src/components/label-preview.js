@@ -22,6 +22,8 @@ class LabelPreview extends HTMLElement {
     this.#form = this.#source?.form ?? null;
     if (!this.#form) return;
     this.#form.addEventListener("input", () => this.#update());
+    // "reset" fires before the fields clear (e.g. <quick-create> reopening).
+    this.#form.addEventListener("reset", () => setTimeout(() => this.#update()));
     this.#update();
   }
 
