@@ -22,6 +22,7 @@
 
 <section class="form-card">
   <form method="post" action="/transactions/consume" class="stack">
+    <% if (it.values.return_to) { %><input type="hidden" name="return_to" value="<%= it.values.return_to %>" /><% } %>
 
     <div class="form-group">
       <label for="location_id">Take from</label>

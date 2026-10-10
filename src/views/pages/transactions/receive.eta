@@ -20,6 +20,7 @@
 
 <section class="form-card">
   <form method="post" action="/transactions/receive" class="stack">
+    <% if (it.returnTo) { %><input type="hidden" name="return_to" value="<%= it.returnTo %>" /><% } %>
 
     <% if (it.locations.length !== 1) { %>
     <div class="form-group">
@@ -140,7 +141,7 @@
         <select id="carton_type_id" name="carton_type_id" required>
           <option value="">Select or scan carton…</option>
           <% it.cartons.forEach(function(c) { %>
-          <option value="<%= c.id %>"><%= it.cartonLabel(c) %></option>
+          <option value="<%= c.id %>" <%= it.selectedCartonTypeId === c.id ? 'selected' : '' %>><%= it.cartonLabel(c) %></option>
           <% }) %>
         </select>
         <carton-scanner
@@ -159,10 +160,9 @@
     <div class="form-group">
       <label for="condition">Condition</label>
       <select id="condition" name="condition" required>
-        <option value="new" selected>New</option>
-        <option value="good">Good</option>
-        <option value="fair">Fair</option>
-        <option value="poor">Poor</option>
+        <% [["new", "New"], ["good", "Good"], ["fair", "Fair"], ["poor", "Poor"]].forEach(function([value, label]) { %>
+        <option value="<%= value %>" <%= it.selectedCondition === value ? 'selected' : '' %>><%= label %></option>
+        <% }) %>
       </select>
     </div>
 
