@@ -16,6 +16,7 @@ const CONDITIONS = ["new", "good", "fair", "poor"];
  * One carton type's stock at one location, summed over conditions.
  * @typedef {object} StockRow
  * @property {string} id anchor id, unique per location + carton type
+ * @property {string} location_id
  * @property {string} carton_type_id
  * @property {string} name
  * @property {string | null} label_code see buildLabelCode(); leads the row when set
@@ -108,6 +109,7 @@ router.get("/", requireAuth, async (req, res) => {
       const dims = (d) => (d.every((x) => x != null) ? [Number(d[0]), Number(d[1]), Number(d[2])] : null);
       row = {
         id: `stock-${locationId}-${r.carton_type_id}`,
+        location_id: locationId,
         carton_type_id: String(r.carton_type_id),
         name: String(r.name),
         label_code: buildLabelCode(/** @type {CartonType} */ (/** @type {unknown} */ (r))),

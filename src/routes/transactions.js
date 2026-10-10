@@ -12,6 +12,29 @@ import { labelCodeOptions } from "./cartons.js";
 
 const router = Router();
 
+/**
+ * Where to go after a receive/consume started from a dashboard row (the
+ * form's hidden `return_to` is "dashboard"): back to that row. Returns null
+ * otherwise, for the form's usual redirect. Only ever builds a local URL.
+ * @param {string} returnTo
+ * @param {string} locationId
+ * @param {string} cartonTypeId
+ * @returns {string | null}
+ */
+function dashboardReturnUrl(returnTo, locationId, cartonTypeId) {
+  if (returnTo !== "dashboard") return null;
+  return `/#${encodeURIComponent(`stock-${locationId}-${cartonTypeId}`)}`;
+}
+
+/**
+ * A query-string value as a string, or "" if missing or repeated.
+ * @param {unknown} v
+ */
+const queryStr = (v) => (typeof v === "string" ? v : "");
+
+/** @type {Condition[]} */
+const CONDITIONS = ["new", "good", "fair", "poor"];
+
 // ── Receive ───────────────────────────────────────────────────────────────────
 
 router.get("/receive", requireAuth, async (req, res) => {
@@ -44,9 +67,13 @@ router.get("/receive", requireAuth, async (req, res) => {
     sourceCodes,
     componentScripts: ["barcode-scanner", "quick-create", "carton-scanner", "qty-stepper", "label-preview"],
     printLabelCarton,
-    // Preselect the location last received into, for the next carton and
-    // later visits.
-    selectedLocationId: req.session.lastReceiveLocationId ?? "",
+    // A dashboard row's Receive button passes its location, carton type and
+    // (if it holds just one) condition. Otherwise preselect the location last
+    // received into, for the next carton and later visits.
+    selectedLocationId: queryStr(req.query.location_id) || req.session.lastReceiveLocationId || "",
+    selectedCartonTypeId: queryStr(req.query.carton_type_id),
+    selectedCondition: CONDITIONS.find((c) => c === req.query.condition) ?? "new",
+    returnTo: req.query.return_to === "dashboard" ? "dashboard" : "",
   });
 });
 
@@ -63,13 +90,13 @@ router.post("/receive", requireAuth, async (req, res) => {
     notes: str(notes) || undefined,
   });
   req.session.lastReceiveLocationId = str(location_id);
-  res.redirect(`/transactions/receive?printLabel=${encodeURIComponent(str(carton_type_id))}`);
+  res.redirect(
+    dashboardReturnUrl(str(req.body.return_to), str(location_id), str(carton_type_id)) ??
+      `/transactions/receive?printLabel=${encodeURIComponent(str(carton_type_id))}`
+  );
 });
 
 // ── Consume ───────────────────────────────────────────────────────────────────
-
-/** @type {Condition[]} */
-const CONDITIONS = ["new", "good", "fair", "poor"];
 
 /**
  * @typedef {object} ConsumeFormValues
@@ -78,6 +105,7 @@ const CONDITIONS = ["new", "good", "fair", "poor"];
  * @property {string} condition
  * @property {string} quantity
  * @property {string} notes
+ * @property {string} return_to "dashboard" to go back to the dashboard row afterwards
  */
 
 /**
@@ -123,12 +151,24 @@ async function renderConsume(req, res, { error = null, values = {} } = {}) {
       condition: "good",
       quantity: "1",
       notes: "",
+      return_to: "",
       ...values,
     },
   });
 }
 
-router.get("/consume", requireAuth, (req, res) => renderConsume(req, res));
+// A dashboard row's Consume button passes its location, carton type and (if
+// it holds just one) condition.
+router.get("/consume", requireAuth, (req, res) => {
+  /** @type {Partial<ConsumeFormValues>} */
+  const values = {};
+  if (queryStr(req.query.location_id)) values.location_id = queryStr(req.query.location_id);
+  if (queryStr(req.query.carton_type_id)) values.carton_type_id = queryStr(req.query.carton_type_id);
+  const condition = CONDITIONS.find((c) => c === req.query.condition);
+  if (condition) values.condition = condition;
+  if (req.query.return_to === "dashboard") values.return_to = "dashboard";
+  return renderConsume(req, res, { values });
+});
 
 router.post("/consume", requireAuth, async (req, res) => {
   /** @type {ConsumeFormValues} */
@@ -138,6 +178,7 @@ router.post("/consume", requireAuth, async (req, res) => {
     condition:      str(req.body.condition),
     quantity:       str(req.body.quantity),
     notes:          str(req.body.notes),
+    return_to:      str(req.body.return_to) === "dashboard" ? "dashboard" : "",
   };
   const quantity = Number(values.quantity);
 
@@ -170,7 +211,7 @@ router.post("/consume", requireAuth, async (req, res) => {
     throw err;
   }
   req.session.lastConsumeLocationId = values.location_id;
-  res.redirect("/");
+  res.redirect(dashboardReturnUrl(values.return_to, values.location_id, values.carton_type_id) ?? "/");
 });
 
 // ── Transfer ──────────────────────────────────────────────────────────────────
