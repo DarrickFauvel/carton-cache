@@ -160,7 +160,8 @@
     <div class="form-group">
       <label for="condition">Condition</label>
       <select id="condition" name="condition" required>
-        <% [["new", "New"], ["good", "Good"], ["fair", "Fair"], ["poor", "Poor"]].forEach(function([value, label]) { %>
+        <% const conditions = [["new", "New"], ["good", "Good"], ["fair", "Fair"], ["poor", "Poor"]]; %>
+        <% conditions.forEach(function([value, label]) { %>
         <option value="<%= value %>" <%= it.selectedCondition === value ? 'selected' : '' %>><%= label %></option>
         <% }) %>
       </select>
