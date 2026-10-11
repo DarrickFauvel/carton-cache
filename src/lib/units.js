@@ -12,6 +12,23 @@ export const inToCm = (inches) => inches * CM_PER_INCH;
 export const cmToIn = (cm) => cm / CM_PER_INCH;
 
 /**
+ * Orders two sizes ([length, width, height] in cm) by length, then width,
+ * then height, smallest first. Compares the whole inches shown in label
+ * codes first, so the order matches what's on screen (a 9.75" and a 9.5"
+ * carton both read "10x…"), then the exact size.
+ * @param {number[]} a
+ * @param {number[]} b
+ * @returns {number}
+ */
+export function compareSizeCm(a, b) {
+  /** @param {number[]} x @param {number[]} y */
+  const byDims = (x, y) => x[0] - y[0] || x[1] - y[1] || x[2] - y[2];
+  /** @param {number[]} cm */
+  const wholeIn = (cm) => cm.map((d) => Math.round(cmToIn(d)));
+  return byDims(wholeIn(a), wholeIn(b)) || byDims(a, b);
+}
+
+/**
  * Typical single-wall corrugated board, 1/8 in. Must match the column
  * default in src/db/migrations/015_carton_printed_size_and_wall_thickness.sql.
  */
