@@ -3,8 +3,84 @@ import { requireRole } from "../middleware/auth.js";
 import { db } from "../db/client.js";
 import { ulid, now, str, defined } from "../lib/id.js";
 import { LOCATION_LABEL_SQL, LOCATION_ORDER_SQL, PARENT_JOIN_SQL, checkParent, locationSaveError, parentOptions } from "../lib/locations.js";
+import { buildLabelCode } from "../lib/labels.js";
+import { compareSizeCm } from "../lib/units.js";
+
+/** @typedef {import("../types.js").Condition} Condition */
+/** @typedef {import("../types.js").CartonType} CartonType */
 
 const router = Router();
+
+/** Slices drawn per carton type before the rest collapse into "+N". */
+const STACK_SLICE_CAP = 20;
+
+/** @type {readonly Condition[]} */
+const CONDITIONS = ["new", "good", "fair", "poor"];
+
+/**
+ * One carton type in the stack view.
+ * @typedef {object} StackGroup
+ * @property {string} label label code, else the carton type's name
+ * @property {number} total
+ * @property {{ condition: Condition; heightPct: number }[]} slices at most STACK_SLICE_CAP
+ * @property {number} more cartons beyond the cap
+ * @property {boolean} noSize no dimensions, so drawn at a placeholder height
+ */
+
+/**
+ * Draws a location's stock as flattened cartons standing on edge, like files:
+ * one thin slice per carton, grouped by carton type, smallest first (the
+ * dashboard's order). A regular slotted carton flattens to about (L + W) by
+ * (H + W); stood on its long edge it's as tall as the shorter of the two.
+ * Heights are a percentage of the stack's tallest carton.
+ * @param {import("@libsql/client").Row[]} lots with carton_type_id, condition, quantity and the carton type's dimension and source columns
+ * @returns {StackGroup[]}
+ */
+function buildStack(lots) {
+  /** @param {unknown[]} d @returns {[number, number, number] | null} */
+  const dims = (d) => (d.every((x) => x != null) ? [Number(d[0]), Number(d[1]), Number(d[2])] : null);
+  /** @type {Map<string, { label: string; inside: [number, number, number] | null; size: [number, number, number] | null; byCondition: Map<Condition, number> }>} */
+  const types = new Map();
+  for (const lot of lots) {
+    const quantity = Number(lot.quantity);
+    if (quantity <= 0) continue;
+    const id = String(lot.carton_type_id);
+    let type = types.get(id);
+    if (!type) {
+      const printed = dims([lot.printed_length_cm, lot.printed_width_cm, lot.printed_height_cm]);
+      const inside = dims([lot.length_cm, lot.width_cm, lot.height_cm]);
+      type = {
+        label: buildLabelCode(/** @type {CartonType} */ (/** @type {unknown} */ (lot))) ?? String(lot.carton_name),
+        inside: inside ?? printed,
+        size: printed ?? inside,
+        byCondition: new Map(),
+      };
+      types.set(id, type);
+    }
+    const condition = /** @type {Condition} */ (lot.condition);
+    type.byCondition.set(condition, (type.byCondition.get(condition) ?? 0) + quantity);
+  }
+
+  /** @param {[number, number, number]} d */
+  const flatHeight = ([l, w, h]) => Math.min(l + w, h + w);
+  const tallest = Math.max(0, ...[...types.values()].map((t) => (t.inside ? flatHeight(t.inside) : 0)));
+
+  return [...types.values()]
+    .sort((a, b) => (a.size && b.size ? compareSizeCm(a.size, b.size) : a.size ? -1 : b.size ? 1 : 0) || a.label.localeCompare(b.label))
+    .map((t) => {
+      const noSize = !t.inside || tallest === 0;
+      const heightPct = noSize ? 50 : Math.max(8, Math.round((flatHeight(/** @type {[number, number, number]} */ (t.inside)) / tallest) * 100));
+      /** @type {StackGroup["slices"]} */
+      const slices = [];
+      let total = 0;
+      for (const condition of CONDITIONS) {
+        const n = t.byCondition.get(condition) ?? 0;
+        total += n;
+        for (let i = 0; i < n && slices.length < STACK_SLICE_CAP; i++) slices.push({ condition, heightPct });
+      }
+      return { label: t.label, total, slices, more: total - slices.length, noSize };
+    });
+}
 
 router.get("/", requireRole("admin", "manager"), async (req, res) => {
   const result = await db.execute({
@@ -93,7 +169,9 @@ async function renderDetail(req, res, id, error = null) {
       args: [id, orgId],
     }),
     db.execute({
-      sql: `SELECT il.*, ct.name AS carton_name, ct.unit_cost
+      sql: `SELECT il.*, ct.name AS carton_name, ct.unit_cost,
+                   ct.length_cm, ct.width_cm, ct.height_cm,
+                   ct.printed_length_cm, ct.printed_width_cm, ct.printed_height_cm, ct.source_code
             FROM inventory_lots il
             JOIN carton_types ct ON ct.id = il.carton_type_id
             WHERE il.location_id = ? AND il.org_id = ?
@@ -114,6 +192,7 @@ async function renderDetail(req, res, id, error = null) {
     title: /** @type {string} */ (location.label),
     location,
     lots: lotResult.rows,
+    stack: buildStack(lotResult.rows),
     children: childResult.rows,
     // Where this sublocation can be moved: any other top-level location.
     moveTargets: location.parent_id == null ? [] : await parentOptions(orgId, /** @type {string} */ (location.parent_id)),

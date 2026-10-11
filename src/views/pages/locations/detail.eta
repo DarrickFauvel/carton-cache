@@ -72,6 +72,24 @@
 </details>
 <% } %>
 
+<% if (it.stack.length > 0) { %>
+<% const stackSummary = it.stack.map(function(g) { return g.total + ' × ' + g.label; }).join(', '); %>
+<details class="stack-view"<%= it.location.parent_id ? ' open' : '' %>>
+  <summary>Stack view</summary>
+  <div class="stack-view__shelf" role="img" aria-label="Cartons standing on edge: <%= stackSummary %>">
+    <% it.stack.forEach(function(g) { %>
+    <figure class="stack-view__group">
+      <div class="stack-view__slices" aria-hidden="true">
+        <% g.slices.forEach(function(s) { %><span class="stack-view__slice stack-view__slice--<%= s.condition %><%= g.noSize ? ' stack-view__slice--nosize' : '' %>" style="height: <%= s.heightPct %>%"></span><% }) %>
+        <% if (g.more > 0) { %><span class="stack-view__more">+<%= g.more %></span><% } %>
+      </div>
+      <figcaption class="stack-view__label" aria-hidden="true"><%= g.label %> <small>×<%= g.total %></small></figcaption>
+    </figure>
+    <% }) %>
+  </div>
+</details>
+<% } %>
+
 <% if (it.lots.length === 0) { %>
 <div class="empty-state">
   <p>No stock<%= it.location.parent_id ? ' here' : ' directly at this location' %>.</p>
